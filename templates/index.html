@@ -1,0 +1,2262 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="theme-color"
+        content="#1f6b4f"
+    >
+
+    <title>
+        نظام متابعة حضور وغياب الطالبات
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
+</head>
+
+<body>
+
+    <!-- ================================================= -->
+    <!-- HEADER -->
+    <!-- ================================================= -->
+
+    <header class="app-header">
+
+        <div class="school-block">
+
+            <div class="school-logo">
+                س
+            </div>
+
+            <div>
+
+                <h1>
+                    {{ school_name }}
+                </h1>
+
+                <p>
+                    نظام متابعة حضور وغياب الطالبات
+                </p>
+
+            </div>
+
+        </div>
+
+        <div class="header-info">
+
+            <div class="header-chip">
+
+                <span>📅</span>
+
+                <strong>
+                    {{ today }}
+                </strong>
+
+            </div>
+
+            <div class="header-chip">
+
+                <span>🎓</span>
+
+                <strong id="headerAcademicYear">
+                    {{ academic_year }}
+                </strong>
+
+            </div>
+
+        </div>
+
+    </header>
+
+
+    <!-- ================================================= -->
+    <!-- TOP NAVIGATION -->
+    <!-- ================================================= -->
+
+    <nav class="top-navigation">
+
+        <button
+            class="nav-item active"
+            data-section="attendanceSection"
+            onclick="openSection('attendanceSection', this)"
+        >
+
+            <span class="nav-icon">
+                📝
+            </span>
+
+            <span>
+                تسجيل الغياب
+            </span>
+
+        </button>
+
+
+        <button
+            class="nav-item"
+            data-section="dashboardSection"
+            onclick="openSection('dashboardSection', this)"
+        >
+
+            <span class="nav-icon">
+                📊
+            </span>
+
+            <span>
+                الرئيسية
+            </span>
+
+        </button>
+
+
+        <button
+            class="nav-item"
+            data-section="todaySection"
+            onclick="openSection('todaySection', this)"
+        >
+
+            <span class="nav-icon">
+                👩‍🎓
+            </span>
+
+            <span>
+                غائبات اليوم
+            </span>
+
+            <span
+                id="todayNavBadge"
+                class="nav-badge"
+            >
+                0
+            </span>
+
+        </button>
+
+
+        <button
+            class="nav-item"
+            data-section="reportsSection"
+            onclick="openSection('reportsSection', this)"
+        >
+
+            <span class="nav-icon">
+                📈
+            </span>
+
+            <span>
+                التقارير
+            </span>
+
+        </button>
+
+
+        <button
+            class="nav-item"
+            data-section="alertsSection"
+            onclick="openSection('alertsSection', this)"
+        >
+
+            <span class="nav-icon">
+                🔔
+            </span>
+
+            <span>
+                التنبيهات
+            </span>
+
+            <span
+                id="alertsNavBadge"
+                class="nav-badge nav-badge-danger"
+            >
+                0
+            </span>
+
+        </button>
+
+
+        <button
+            class="nav-item"
+            data-section="studentsSection"
+            onclick="openSection('studentsSection', this)"
+        >
+
+            <span class="nav-icon">
+                👥
+            </span>
+
+            <span>
+                الطالبات
+            </span>
+
+        </button>
+
+
+        <button
+            class="nav-item"
+            data-section="settingsSection"
+            onclick="openSection('settingsSection', this)"
+        >
+
+            <span class="nav-icon">
+                ⚙️
+            </span>
+
+            <span>
+                الإعدادات
+            </span>
+
+        </button>
+
+    </nav>
+
+
+    <!-- ================================================= -->
+    <!-- MESSAGE -->
+    <!-- ================================================= -->
+
+    <div
+        id="messageBox"
+        class="toast hidden"
+    ></div>
+
+
+    <!-- ================================================= -->
+    <!-- MAIN -->
+    <!-- ================================================= -->
+
+    <main class="app-main">
+
+
+        <!-- ============================================= -->
+        <!-- ATTENDANCE -->
+        <!-- ============================================= -->
+
+        <section
+            id="attendanceSection"
+            class="page-section active-section"
+        >
+
+            <div class="page-heading">
+
+                <div>
+
+                    <span class="page-kicker">
+                        التسجيل اليومي
+                    </span>
+
+                    <h2>
+                        تسجيل الغياب
+                    </h2>
+
+                    <p>
+                        اختاري الصف ثم حددي الغائبات فقط.
+                    </p>
+
+                </div>
+
+                <div class="today-mini-card">
+
+                    <span>
+                        اليوم
+                    </span>
+
+                    <strong>
+                        {{ today }}
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="attendance-layout">
+
+                <div class="main-card registration-card">
+
+                    <div class="card-title-row">
+
+                        <div>
+
+                            <h3>
+                                بيانات الصف
+                            </h3>
+
+                            <p>
+                                التسجيل يستغرق خطوات بسيطة فقط.
+                            </p>
+
+                        </div>
+
+                        <div class="step-chip">
+                            1
+                        </div>
+
+                    </div>
+
+
+                    <div class="form-grid two">
+
+                        <div class="field">
+
+                            <label>
+                                المرحلة
+                            </label>
+
+                            <select id="grade">
+
+                                <option value="">
+                                    اختاري المرحلة
+                                </option>
+
+                                <option value="5">
+                                    خامس
+                                </option>
+
+                                <option value="6">
+                                    سادس
+                                </option>
+
+                                <option value="7">
+                                    سابع
+                                </option>
+
+                                <option value="8">
+                                    ثامن
+                                </option>
+
+                                <option value="9">
+                                    تاسع
+                                </option>
+
+                                <option value="10">
+                                    عاشر
+                                </option>
+
+                                <option value="11">
+                                    حادي عشر
+                                </option>
+
+                                <option value="12">
+                                    ثاني عشر
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <div class="field">
+
+                            <label>
+                                الشعبة
+                            </label>
+
+                            <select id="section">
+
+                                <option value="">
+                                    اختاري الشعبة
+                                </option>
+
+                                <option value="1">
+                                    1
+                                </option>
+
+                                <option value="2">
+                                    2
+                                </option>
+
+                                <option value="3">
+                                    3
+                                </option>
+
+                                <option value="4">
+                                    4
+                                </option>
+
+                                <option value="5">
+                                    5
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="divider"></div>
+
+
+                    <div class="card-title-row">
+
+                        <div>
+
+                            <h3>
+                                اختيار الغائبات
+                            </h3>
+
+                            <p>
+                                يمكنك اختيار أكثر من طالبة.
+                            </p>
+
+                        </div>
+
+                        <div class="step-chip">
+                            2
+                        </div>
+
+                    </div>
+
+
+                    <div class="field search-field">
+
+                        <span class="search-icon">
+                            🔎
+                        </span>
+
+                        <input
+                            id="studentSearch"
+                            type="search"
+                            placeholder="ابحثي عن اسم الطالبة..."
+                        >
+
+                    </div>
+
+
+                    <div
+                        id="studentList"
+                        class="student-list"
+                    >
+
+                        <div class="empty-state">
+
+                            <div class="empty-icon">
+                                👩‍🎓
+                            </div>
+
+                            اختاري المرحلة والشعبة لعرض الطالبات.
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="selected-summary">
+
+                        <div>
+
+                            <span>
+                                عدد الغائبات المحددات
+                            </span>
+
+                            <strong id="selectedCount">
+                                0
+                            </strong>
+
+                        </div>
+
+                        <button
+                            class="text-button"
+                            onclick="clearSelectedStudents()"
+                        >
+                            مسح الاختيار
+                        </button>
+
+                    </div>
+
+
+                    <div
+                        id="selectedStudents"
+                        class="selected-students"
+                    ></div>
+
+
+                    <div class="divider"></div>
+
+
+                    <div class="card-title-row">
+
+                        <div>
+
+                            <h3>
+                                اعتماد التسجيل
+                            </h3>
+
+                            <p>
+                                اكتبي اسم المعلمة ثم احفظي.
+                            </p>
+
+                        </div>
+
+                        <div class="step-chip">
+                            3
+                        </div>
+
+                    </div>
+
+
+                    <div class="field">
+
+                        <label>
+                            اسم المعلمة
+                        </label>
+
+                        <input
+                            id="teacherName"
+                            type="text"
+                            autocomplete="name"
+                            placeholder="اكتبي اسم المعلمة"
+                        >
+
+                    </div>
+
+
+                    <div class="action-buttons">
+
+                        <button
+                            id="saveAbsenceBtn"
+                            class="btn btn-primary btn-large"
+                        >
+
+                            <span>
+                                💾
+                            </span>
+
+                            حفظ الغياب
+
+                        </button>
+
+
+                        <button
+                            id="noAbsenceBtn"
+                            class="btn btn-success-soft btn-large"
+                        >
+
+                            <span>
+                                ✅
+                            </span>
+
+                            لا يوجد غياب
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <aside class="attendance-sidebar">
+
+
+                    <div
+                        class="side-card progress-card"
+                        onclick="openSectionByName('dashboardSection')"
+                    >
+
+                        <div class="side-icon">
+                            📌
+                        </div>
+
+                        <div class="side-card-content">
+
+                            <span>
+                                حالة التسجيل اليوم
+                            </span>
+
+                            <strong>
+                                <span id="quickRegistered">
+                                    0
+                                </span>
+                                من
+                                <span id="quickTotalClasses">
+                                    0
+                                </span>
+                                صف
+                            </strong>
+
+                            <div class="progress-bar">
+
+                                <div
+                                    id="quickProgressBar"
+                                    class="progress-fill"
+                                ></div>
+
+                            </div>
+
+                            <small>
+                                اضغطي لعرض التفاصيل
+                            </small>
+
+                        </div>
+
+                    </div>
+
+
+                    <div
+                        class="side-card warning-card"
+                        onclick="showMissingClassesModal()"
+                    >
+
+                        <div class="side-icon">
+                            ⏳
+                        </div>
+
+                        <div class="side-card-content">
+
+                            <span>
+                                الصفوف غير المسجلة
+                            </span>
+
+                            <strong id="quickMissing">
+                                0
+                            </strong>
+
+                            <small>
+                                اضغطي لعرض الصفوف
+                            </small>
+
+                        </div>
+
+                    </div>
+
+
+                    <div
+                        class="side-card info-card"
+                        onclick="openSectionByName('todaySection')"
+                    >
+
+                        <div class="side-icon">
+                            👩‍🎓
+                        </div>
+
+                        <div class="side-card-content">
+
+                            <span>
+                                غائبات اليوم
+                            </span>
+
+                            <strong id="quickAbsentToday">
+                                0
+                            </strong>
+
+                            <small>
+                                عرض القائمة
+                            </small>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="tips-card">
+
+                        <h4>
+                            💡 تسجيل سريع
+                        </h4>
+
+                        <p>
+                            إذا كان الصف مكتمل الحضور لا تختاري أي طالبة، واضغطي مباشرة على «لا يوجد غياب».
+                        </p>
+
+                    </div>
+
+                </aside>
+
+            </div>
+
+        </section>
+
+
+        <!-- ============================================= -->
+        <!-- DASHBOARD -->
+        <!-- ============================================= -->
+
+        <section
+            id="dashboardSection"
+            class="page-section"
+        >
+
+            <div class="page-heading">
+
+                <div>
+
+                    <span class="page-kicker">
+                        لوحة المتابعة
+                    </span>
+
+                    <h2>
+                        الرئيسية والإحصائيات
+                    </h2>
+
+                    <p>
+                        صورة فورية عن حضور وغياب اليوم.
+                    </p>
+
+                </div>
+
+                <button
+                    class="btn btn-light"
+                    onclick="refreshAll()"
+                >
+                    🔄 تحديث
+                </button>
+
+            </div>
+
+
+            <div class="stats-grid">
+
+                <div class="stat-card">
+
+                    <div class="stat-icon green">
+                        👩‍🎓
+                    </div>
+
+                    <span>
+                        إجمالي الطالبات
+                    </span>
+
+                    <strong id="totalStudents">
+                        0
+                    </strong>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <div class="stat-icon orange">
+                        📝
+                    </div>
+
+                    <span>
+                        غائبات اليوم
+                    </span>
+
+                    <strong id="absentToday">
+                        0
+                    </strong>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <div class="stat-icon blue">
+                        📊
+                    </div>
+
+                    <span>
+                        نسبة الغياب
+                    </span>
+
+                    <strong id="absencePercentage">
+                        0%
+                    </strong>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <div class="stat-icon emerald">
+                        ✅
+                    </div>
+
+                    <span>
+                        الصفوف المسجلة
+                    </span>
+
+                    <strong id="registeredClasses">
+                        0
+                    </strong>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <div class="stat-icon yellow">
+                        ⏳
+                    </div>
+
+                    <span>
+                        الصفوف غير المسجلة
+                    </span>
+
+                    <strong id="unregisteredClasses">
+                        0
+                    </strong>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <div class="stat-icon red">
+                        🔔
+                    </div>
+
+                    <span>
+                        إنذارات الغياب
+                    </span>
+
+                    <strong id="alertCount">
+                        0
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="dashboard-grid">
+
+                <div class="main-card">
+
+                    <div class="card-title-row">
+
+                        <div>
+
+                            <h3>
+                                إنجاز التسجيل اليومي
+                            </h3>
+
+                            <p>
+                                نسبة الصفوف التي تم تسجيلها.
+                            </p>
+
+                        </div>
+
+                        <strong
+                            id="completionPercentage"
+                            class="large-percentage"
+                        >
+                            0%
+                        </strong>
+
+                    </div>
+
+
+                    <div class="big-progress">
+
+                        <div
+                            id="dashboardProgress"
+                            class="big-progress-fill"
+                        ></div>
+
+                    </div>
+
+
+                    <div class="progress-numbers">
+
+                        <span>
+                            تم تسجيل
+                            <strong id="progressRegistered">
+                                0
+                            </strong>
+                        </span>
+
+                        <span>
+                            من أصل
+                            <strong id="progressTotal">
+                                0
+                            </strong>
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div class="main-card">
+
+                    <div class="card-title-row">
+
+                        <div>
+
+                            <h3>
+                                الصفوف غير المسجلة
+                            </h3>
+
+                            <p>
+                                يتم تحديثها مباشرة بعد التسجيل.
+                            </p>
+
+                        </div>
+
+                        <span
+                            id="missingCountBadge"
+                            class="count-badge"
+                        >
+                            0
+                        </span>
+
+                    </div>
+
+
+                    <div
+                        id="missingClassesGrid"
+                        class="class-chip-grid"
+                    ></div>
+
+                </div>
+
+            </div>
+
+
+            <div class="main-card">
+
+                <div class="card-title-row">
+
+                    <div>
+
+                        <h3>
+                            حالة جميع الصفوف اليوم
+                        </h3>
+
+                        <p>
+                            يمكنك معرفة من سجل ووقت التسجيل.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="table-wrapper">
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    الصف
+                                </th>
+
+                                <th>
+                                    الحالة
+                                </th>
+
+                                <th>
+                                    المعلمة
+                                </th>
+
+                                <th>
+                                    الوقت
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody id="classStatusTable">
+
+                            <tr>
+
+                                <td colspan="4">
+                                    جاري التحميل...
+                                </td>
+
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ============================================= -->
+        <!-- TODAY -->
+        <!-- ============================================= -->
+
+        <section
+            id="todaySection"
+            class="page-section"
+        >
+
+            <div class="page-heading">
+
+                <div>
+
+                    <span class="page-kicker">
+                        متابعة اليوم
+                    </span>
+
+                    <h2>
+                        غائبات اليوم
+                    </h2>
+
+                    <p>
+                        عرض وإدارة الغائبات وإشعارات واتساب.
+                    </p>
+
+                </div>
+
+                <div class="section-actions">
+
+                    <button
+                        class="btn btn-light"
+                        onclick="window.print()"
+                    >
+                        🖨️ طباعة
+                    </button>
+
+                    <button
+                        class="btn btn-primary-soft"
+                        onclick="exportToday()"
+                    >
+                        📥 Excel
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div class="main-card">
+
+                <div class="filter-row">
+
+                    <div class="field search-field compact">
+
+                        <span class="search-icon">
+                            🔎
+                        </span>
+
+                        <input
+                            id="todaySearch"
+                            type="search"
+                            placeholder="بحث باسم الطالبة..."
+                            oninput="renderTodayAbsences()"
+                        >
+
+                    </div>
+
+                    <div class="today-counter">
+
+                        غائبات اليوم:
+
+                        <strong id="todayCountLabel">
+                            0
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                <div class="table-wrapper">
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    #
+                                </th>
+
+                                <th>
+                                    اسم الطالبة
+                                </th>
+
+                                <th>
+                                    الصف
+                                </th>
+
+                                <th>
+                                    المعلمة
+                                </th>
+
+                                <th>
+                                    الوقت
+                                </th>
+
+                                <th>
+                                    الحالة
+                                </th>
+
+                                <th>
+                                    واتساب
+                                </th>
+
+                                <th>
+                                    إجراء
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody id="todayAbsenceTable">
+
+                            <tr>
+
+                                <td colspan="8">
+                                    جاري التحميل...
+                                </td>
+
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ============================================= -->
+        <!-- REPORTS -->
+        <!-- ============================================= -->
+
+        <section
+            id="reportsSection"
+            class="page-section"
+        >
+
+            <div class="page-heading">
+
+                <div>
+
+                    <span class="page-kicker">
+                        التحليل والمتابعة
+                    </span>
+
+                    <h2>
+                        التقارير
+                    </h2>
+
+                    <p>
+                        تقارير يومية وشهرية وتحليل أنماط الغياب.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="main-card report-filter-card">
+
+                <div class="form-grid reports">
+
+                    <div class="field">
+
+                        <label>
+                            نوع التقرير
+                        </label>
+
+                        <select id="reportType">
+
+                            <option value="daily">
+                                التقرير اليومي
+                            </option>
+
+                            <option value="monthly">
+                                التقرير الشهري
+                            </option>
+
+                            <option value="classes">
+                                أكثر الصفوف غيابًا
+                            </option>
+
+                            <option value="students">
+                                أكثر الطالبات غيابًا
+                            </option>
+
+                            <option value="weekday">
+                                الغياب حسب أيام الأسبوع
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="field">
+
+                        <label>
+                            التاريخ
+                        </label>
+
+                        <input
+                            id="reportDate"
+                            type="date"
+                            value="{{ today }}"
+                        >
+
+                    </div>
+
+
+                    <div class="field">
+
+                        <label>
+                            الشهر
+                        </label>
+
+                        <input
+                            id="reportMonth"
+                            type="month"
+                        >
+
+                    </div>
+
+
+                    <div class="field">
+
+                        <label>
+                            المرحلة
+                        </label>
+
+                        <select id="reportGrade">
+
+                            <option value="">
+                                جميع المراحل
+                            </option>
+
+                            <option value="5">
+                                خامس
+                            </option>
+
+                            <option value="6">
+                                سادس
+                            </option>
+
+                            <option value="7">
+                                سابع
+                            </option>
+
+                            <option value="8">
+                                ثامن
+                            </option>
+
+                            <option value="9">
+                                تاسع
+                            </option>
+
+                            <option value="10">
+                                عاشر
+                            </option>
+
+                            <option value="11">
+                                حادي عشر
+                            </option>
+
+                            <option value="12">
+                                ثاني عشر
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="field">
+
+                        <label>
+                            الشعبة
+                        </label>
+
+                        <select id="reportSection">
+
+                            <option value="">
+                                جميع الشعب
+                            </option>
+
+                            <option value="1">
+                                1
+                            </option>
+
+                            <option value="2">
+                                2
+                            </option>
+
+                            <option value="3">
+                                3
+                            </option>
+
+                            <option value="4">
+                                4
+                            </option>
+
+                            <option value="5">
+                                5
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+
+                <div class="action-buttons">
+
+                    <button
+                        class="btn btn-primary"
+                        onclick="loadReport()"
+                    >
+                        📊 عرض التقرير
+                    </button>
+
+                    <button
+                        class="btn btn-primary-soft"
+                        onclick="exportReport()"
+                    >
+                        📥 Excel
+                    </button>
+
+                    <button
+                        class="btn btn-light"
+                        onclick="window.print()"
+                    >
+                        🖨️ طباعة
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div
+                id="reportVisual"
+                class="report-visual hidden"
+            ></div>
+
+
+            <div class="main-card">
+
+                <div class="report-summary">
+
+                    <strong id="reportSummary">
+                        اختاري التقرير ثم اضغطي عرض التقرير.
+                    </strong>
+
+                </div>
+
+
+                <div class="table-wrapper">
+
+                    <table>
+
+                        <thead id="reportHead"></thead>
+
+                        <tbody id="reportBody">
+
+                            <tr>
+
+                                <td>
+                                    لا توجد بيانات معروضة بعد.
+                                </td>
+
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ============================================= -->
+        <!-- ALERTS -->
+        <!-- ============================================= -->
+
+        <section
+            id="alertsSection"
+            class="page-section"
+        >
+
+            <div class="page-heading">
+
+                <div>
+
+                    <span class="page-kicker">
+                        متابعة الغياب المتكرر
+                    </span>
+
+                    <h2>
+                        التنبيهات
+                    </h2>
+
+                    <p>
+                        الطالبات اللاتي تجاوزن حد الغياب المحدد.
+                    </p>
+
+                </div>
+
+                <div class="danger-summary">
+
+                    الحد الحالي:
+
+                    <strong id="currentAlertLimit">
+                        {{ alert_limit }}
+                    </strong>
+
+                    أيام
+
+                </div>
+
+            </div>
+
+
+            <div class="main-card">
+
+                <div class="table-wrapper">
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    #
+                                </th>
+
+                                <th>
+                                    الطالبة
+                                </th>
+
+                                <th>
+                                    الصف
+                                </th>
+
+                                <th>
+                                    أيام الغياب
+                                </th>
+
+                                <th>
+                                    آخر غياب
+                                </th>
+
+                                <th>
+                                    الحالة
+                                </th>
+
+                                <th>
+                                    إشعار الأم
+                                </th>
+
+                                <th>
+                                    إشعار الأب
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody id="alertsTable">
+
+                            <tr>
+
+                                <td colspan="8">
+                                    جاري التحميل...
+                                </td>
+
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ============================================= -->
+        <!-- STUDENTS -->
+        <!-- ============================================= -->
+
+        <section
+            id="studentsSection"
+            class="page-section"
+        >
+
+            <div class="page-heading">
+
+                <div>
+
+                    <span class="page-kicker">
+                        إدارة البيانات
+                    </span>
+
+                    <h2>
+                        إدارة الطالبات
+                    </h2>
+
+                    <p>
+                        بحث، إضافة، تعديل، نقل، ومراجعة الهواتف.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="students-tabs">
+
+                <button
+                    class="subtab active"
+                    onclick="openStudentTab('searchStudentsTab', this)"
+                >
+                    🔎 البحث والتعديل
+                </button>
+
+                <button
+                    class="subtab"
+                    onclick="openStudentTab('addStudentTab', this)"
+                >
+                    ➕ إضافة طالبة
+                </button>
+
+                <button
+                    class="subtab"
+                    onclick="openStudentTab('phonesTab', this)"
+                >
+                    📱 أرقام تحتاج مراجعة
+                </button>
+
+            </div>
+
+
+            <div
+                id="searchStudentsTab"
+                class="student-tab active"
+            >
+
+                <div class="main-card">
+
+                    <div class="field search-field">
+
+                        <span class="search-icon">
+                            🔎
+                        </span>
+
+                        <input
+                            id="managementSearch"
+                            type="search"
+                            placeholder="اكتبي جزءًا من اسم الطالبة..."
+                        >
+
+                    </div>
+
+
+                    <button
+                        class="btn btn-primary"
+                        onclick="searchManagementStudents()"
+                    >
+                        بحث
+                    </button>
+
+
+                    <div
+                        id="managementResults"
+                        class="management-results"
+                    >
+
+                        <div class="empty-state">
+
+                            ابحثي عن طالبة لعرض بياناتها.
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div
+                id="addStudentTab"
+                class="student-tab"
+            >
+
+                <div class="main-card">
+
+                    <h3>
+                        إضافة طالبة جديدة
+                    </h3>
+
+
+                    <div class="form-grid two">
+
+                        <div class="field full">
+
+                            <label>
+                                اسم الطالبة
+                            </label>
+
+                            <input
+                                id="newStudentName"
+                                type="text"
+                                placeholder="الاسم الكامل"
+                            >
+
+                        </div>
+
+
+                        <div class="field">
+
+                            <label>
+                                المرحلة
+                            </label>
+
+                            <select id="newGrade">
+
+                                <option value="">
+                                    اختاري
+                                </option>
+
+                                <option value="5">
+                                    خامس
+                                </option>
+
+                                <option value="6">
+                                    سادس
+                                </option>
+
+                                <option value="7">
+                                    سابع
+                                </option>
+
+                                <option value="8">
+                                    ثامن
+                                </option>
+
+                                <option value="9">
+                                    تاسع
+                                </option>
+
+                                <option value="10">
+                                    عاشر
+                                </option>
+
+                                <option value="11">
+                                    حادي عشر
+                                </option>
+
+                                <option value="12">
+                                    ثاني عشر
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <div class="field">
+
+                            <label>
+                                الشعبة
+                            </label>
+
+                            <select id="newSection">
+
+                                <option value="">
+                                    اختاري
+                                </option>
+
+                                <option value="1">
+                                    1
+                                </option>
+
+                                <option value="2">
+                                    2
+                                </option>
+
+                                <option value="3">
+                                    3
+                                </option>
+
+                                <option value="4">
+                                    4
+                                </option>
+
+                                <option value="5">
+                                    5
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <div class="field">
+
+                            <label>
+                                رقم هاتف الأب
+                            </label>
+
+                            <input
+                                id="newFatherPhone"
+                                type="tel"
+                                placeholder="مثال: 91234567"
+                            >
+
+                        </div>
+
+
+                        <div class="field">
+
+                            <label>
+                                رقم هاتف الأم
+                            </label>
+
+                            <input
+                                id="newMotherPhone"
+                                type="tel"
+                                placeholder="مثال: 91234567"
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <button
+                        class="btn btn-primary btn-large"
+                        onclick="addNewStudent()"
+                    >
+                        ➕ إضافة الطالبة
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div
+                id="phonesTab"
+                class="student-tab"
+            >
+
+                <div class="main-card">
+
+                    <div class="card-title-row">
+
+                        <div>
+
+                            <h3>
+                                مراجعة أرقام الهواتف
+                            </h3>
+
+                            <p>
+                                الطالبات اللاتي لديهن رقم ناقص أو يحتاج مراجعة.
+                            </p>
+
+                        </div>
+
+                        <button
+                            class="btn btn-primary-soft"
+                            onclick="loadMissingPhones()"
+                        >
+                            تحديث
+                        </button>
+
+                    </div>
+
+
+                    <div
+                        id="missingPhonesResults"
+                        class="table-wrapper"
+                    >
+
+                        <div class="empty-state">
+                            اضغطي تحديث لعرض البيانات.
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ============================================= -->
+        <!-- SETTINGS -->
+        <!-- ============================================= -->
+
+        <section
+            id="settingsSection"
+            class="page-section"
+        >
+
+            <div class="page-heading">
+
+                <div>
+
+                    <span class="page-kicker">
+                        إعدادات الإدارة
+                    </span>
+
+                    <h2>
+                        إعدادات النظام
+                    </h2>
+
+                    <p>
+                        تخصيص المدرسة والعام والرسائل وحد الإنذار.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="settings-grid">
+
+                <div class="main-card">
+
+                    <h3>
+                        الإعدادات العامة
+                    </h3>
+
+
+                    <div class="field">
+
+                        <label>
+                            اسم المدرسة
+                        </label>
+
+                        <input
+                            id="settingSchoolName"
+                            type="text"
+                        >
+
+                    </div>
+
+
+                    <div class="field">
+
+                        <label>
+                            العام الدراسي
+                        </label>
+
+                        <input
+                            id="settingAcademicYear"
+                            type="text"
+                            placeholder="2026/2027"
+                        >
+
+                    </div>
+
+
+                    <div class="field">
+
+                        <label>
+                            حد إنذار الغياب
+                        </label>
+
+                        <input
+                            id="settingAlertLimit"
+                            type="number"
+                            min="1"
+                        >
+
+                    </div>
+
+
+                    <button
+                        class="btn btn-primary"
+                        onclick="saveSettings()"
+                    >
+                        💾 حفظ الإعدادات
+                    </button>
+
+                </div>
+
+
+                <div class="main-card">
+
+                    <h3>
+                        رسائل واتساب
+                    </h3>
+
+
+                    <div class="field">
+
+                        <label>
+                            رسالة الغياب اليومية
+                        </label>
+
+                        <textarea
+                            id="settingDailyMessage"
+                            rows="6"
+                        ></textarea>
+
+                        <small>
+                            استخدمي {student} لاسم الطالبة و {date} للتاريخ.
+                        </small>
+
+                    </div>
+
+
+                    <div class="field">
+
+                        <label>
+                            رسالة تجاوز الغياب
+                        </label>
+
+                        <textarea
+                            id="settingAlertMessage"
+                            rows="6"
+                        ></textarea>
+
+                        <small>
+                            استخدمي {student} و {limit}.
+                        </small>
+
+                    </div>
+
+
+                    <button
+                        class="btn btn-primary"
+                        onclick="saveSettings()"
+                    >
+                        💾 حفظ الرسائل
+                    </button>
+
+                </div>
+
+
+                <div class="main-card backup-card">
+
+                    <div class="backup-icon">
+                        💾
+                    </div>
+
+                    <div>
+
+                        <h3>
+                            النسخ الاحتياطي
+                        </h3>
+
+                        <p>
+                            نزّلي نسخة من قاعدة البيانات واحفظيها في مكان آمن.
+                        </p>
+
+                    </div>
+
+                    <a
+                        href="/backup"
+                        class="btn btn-primary"
+                    >
+                        تنزيل نسخة احتياطية
+                    </a>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- ================================================= -->
+    <!-- MISSING CLASSES MODAL -->
+    <!-- ================================================= -->
+
+    <div
+        id="missingModal"
+        class="modal-overlay hidden"
+        onclick="closeModalOutside(event, 'missingModal')"
+    >
+
+        <div class="modal">
+
+            <div class="modal-header">
+
+                <div>
+
+                    <span class="page-kicker">
+                        متابعة التسجيل
+                    </span>
+
+                    <h3>
+                        الصفوف غير المسجلة اليوم
+                    </h3>
+
+                </div>
+
+                <button
+                    class="modal-close"
+                    onclick="closeModal('missingModal')"
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+            <div
+                id="modalMissingClasses"
+                class="class-chip-grid large"
+            ></div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ================================================= -->
+    <!-- EDIT STUDENT MODAL -->
+    <!-- ================================================= -->
+
+    <div
+        id="studentEditModal"
+        class="modal-overlay hidden"
+        onclick="closeModalOutside(event, 'studentEditModal')"
+    >
+
+        <div class="modal">
+
+            <div class="modal-header">
+
+                <div>
+
+                    <span class="page-kicker">
+                        تعديل البيانات
+                    </span>
+
+                    <h3>
+                        بيانات الطالبة
+                    </h3>
+
+                </div>
+
+                <button
+                    class="modal-close"
+                    onclick="closeModal('studentEditModal')"
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+            <input
+                id="editStudentId"
+                type="hidden"
+            >
+
+
+            <div class="form-grid two">
+
+                <div class="field full">
+
+                    <label>
+                        اسم الطالبة
+                    </label>
+
+                    <input
+                        id="editStudentName"
+                        type="text"
+                    >
+
+                </div>
+
+
+                <div class="field">
+
+                    <label>
+                        المرحلة
+                    </label>
+
+                    <select id="editGrade">
+
+                        <option value="5">
+                            خامس
+                        </option>
+
+                        <option value="6">
+                            سادس
+                        </option>
+
+                        <option value="7">
+                            سابع
+                        </option>
+
+                        <option value="8">
+                            ثامن
+                        </option>
+
+                        <option value="9">
+                            تاسع
+                        </option>
+
+                        <option value="10">
+                            عاشر
+                        </option>
+
+                        <option value="11">
+                            حادي عشر
+                        </option>
+
+                        <option value="12">
+                            ثاني عشر
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="field">
+
+                    <label>
+                        الشعبة
+                    </label>
+
+                    <select id="editSection">
+
+                        <option value="1">
+                            1
+                        </option>
+
+                        <option value="2">
+                            2
+                        </option>
+
+                        <option value="3">
+                            3
+                        </option>
+
+                        <option value="4">
+                            4
+                        </option>
+
+                        <option value="5">
+                            5
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="field">
+
+                    <label>
+                        هاتف الأب
+                    </label>
+
+                    <input
+                        id="editFatherPhone"
+                        type="tel"
+                    >
+
+                </div>
+
+
+                <div class="field">
+
+                    <label>
+                        هاتف الأم
+                    </label>
+
+                    <input
+                        id="editMotherPhone"
+                        type="tel"
+                    >
+
+                </div>
+
+            </div>
+
+
+            <div class="action-buttons">
+
+                <button
+                    class="btn btn-primary"
+                    onclick="saveStudentEdit()"
+                >
+                    💾 حفظ التعديل
+                </button>
+
+                <button
+                    class="btn btn-danger-soft"
+                    onclick="deactivateCurrentStudent()"
+                >
+                    تعطيل الطالبة
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ================================================= -->
+    <!-- FOOTER -->
+    <!-- ================================================= -->
+
+    <footer>
+
+        <span>
+            برمجة وتصميم:
+        </span>
+
+        <strong>
+            أ. سامية المقبالية
+        </strong>
+
+        <span>
+            أخصائية مركز مصادر التعلم
+        </span>
+
+    </footer>
+
+
+    <script>
+
+        const TODAY =
+            "{{ today }}";
+
+        let ALERT_LIMIT =
+            Number("{{ alert_limit }}") || 8;
+
+    </script>
+
+    <script
+        src="{{ url_for('static', filename='script.js') }}"
+    ></script>
+
+</body>
+
+</html>
