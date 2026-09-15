@@ -1109,7 +1109,7 @@ def read_students_excel(file_storage):
             issues.append({"row": int(idx)+2, "student_name": name or "-", "reason": "اسم أو صف/شعبة غير صالح"}); continue
         key = name.casefold()
         if key in seen:
-            issues.append({"row": int(idx)+2, "student_name": name, "reason": "اسم مكرر داخل ملف Excel"}); continue
+            issues.append({"row": int(idx)+2, "student_name": name, "reason": "اسم مكرر داخل ملف Excel"})
         seen.add(key)
         rows.append({"student_name":name,"grade":grade,"section":section,"father_phone":father,"mother_phone":mother,"father_phone_status":phone_status(father),"mother_phone_status":phone_status(mother)})
     return rows, issues
@@ -1150,7 +1150,9 @@ def students_import_confirm():
     if not file or not file.filename: return jsonify({"success":False,"message":"اختاري ملف Excel أولًا."}),400
     try:
         rows,issues=read_students_excel(file); result=compare_excel_students(rows,issues)
-        if result["issues"]: return jsonify({"success":False,"message":"يوجد في الملف بيانات تحتاج مراجعة. أصلحيها ثم أعيدي المعاينة."}),400
+        allow_issues = str(request.form.get("allow_issues", "")).strip().lower() in {"1", "true", "yes"}
+        if result["issues"] and not allow_issues:
+            return jsonify({"success":False,"message":"يوجد في الملف بيانات تحتاج مراجعة. راجعيها أولًا، ثم اختاري السماح بإضافتها إذا رغبتِ."}),400
         conn=get_db(); added=updated=0
         try:
             for x in result["new"]:
@@ -1161,7 +1163,8 @@ def students_import_confirm():
         except Exception: conn.rollback(); raise
         finally: conn.close()
         audit("تحديث الطالبات من Excel",f"تمت إضافة {added} وتحديث {updated} طالبة دون حذف سجلات الغياب","الإدارة")
-        return jsonify({"success":True,"message":f"تم التحديث بنجاح: إضافة {added}، تحديث {updated}، بدون تغيير {result['unchanged']}."})
+        review_note = f"، وتم السماح بـ {len(result['issues'])} حالة مراجعة" if result["issues"] and allow_issues else ""
+        return jsonify({"success":True,"message":f"تم التحديث بنجاح: إضافة {added}، تحديث {updated}، بدون تغيير {result['unchanged']}{review_note}."})
     except Exception as error: return jsonify({"success":False,"message":f"تعذر تنفيذ التحديث: {error}"}),400
 
 # =========================================================
@@ -1247,18 +1250,6 @@ def register_absence():
         year
     )).fetchone()
 
-    if previous:
-        conn.close()
-
-        return jsonify({
-            "success":
-                False,
-
-            "message":
-                "تم تسجيل هذا الصف اليوم مسبقًا بواسطة "
-                + previous["teacher_name"]
-        }), 409
-
     added = 0
 
     try:
@@ -1300,23 +1291,32 @@ def register_absence():
             except sqlite3.IntegrityError:
                 pass
 
-        conn.execute("""
-            INSERT INTO class_registration (
+        if previous:
+            # الصف مسجل مسبقًا: نسمح بإضافة غائبات تم نسيانهن
+            # ونحوّل حالة "لا يوجد غياب" إلى تسجيل غياب عند الحاجة.
+            conn.execute("""
+                UPDATE class_registration
+                SET no_absence = 0
+                WHERE id = ?
+            """, (previous["id"],))
+        else:
+            conn.execute("""
+                INSERT INTO class_registration (
+                    grade,
+                    section,
+                    registration_date,
+                    teacher_name,
+                    no_absence,
+                    academic_year
+                )
+                VALUES (?, ?, ?, ?, 0, ?)
+            """, (
                 grade,
                 section,
-                registration_date,
+                today,
                 teacher_name,
-                no_absence,
-                academic_year
-            )
-            VALUES (?, ?, ?, ?, 0, ?)
-        """, (
-            grade,
-            section,
-            today,
-            teacher_name,
-            year
-        ))
+                year
+            ))
 
         conn.commit()
 
@@ -1336,7 +1336,7 @@ def register_absence():
 
     audit(
         "تسجيل غياب",
-        f"تم تسجيل {added} طالبة غائبة في الصف {grade}/{section}",
+        f"تمت إضافة {added} طالبة غائبة في الصف {grade}/{section}" if previous else f"تم تسجيل {added} طالبة غائبة في الصف {grade}/{section}",
         teacher_name
     )
 
@@ -1345,7 +1345,7 @@ def register_absence():
             True,
 
         "message":
-            f"تم تسجيل الصف {GRADE_NAMES.get(grade, grade)} / {section} بنجاح.",
+            (f"تمت إضافة {added} طالبة غائبة جديدة للصف {GRADE_NAMES.get(grade, grade)} / {section}." if previous else f"تم تسجيل الصف {GRADE_NAMES.get(grade, grade)} / {section} بنجاح."),
 
         "absence_count":
             added
