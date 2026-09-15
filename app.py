@@ -10,8 +10,16 @@ import pandas as pd
 app = Flask(__name__)
 
 BASE_DIR = Path(__file__).resolve().parent
-DB_FILE = BASE_DIR / "attendance.db"
-BACKUP_DIR = BASE_DIR / "backups"
+
+# على Render نحفظ قاعدة البيانات في القرص الدائم /data.
+# محليًا تبقى قاعدة البيانات داخل مجلد المشروع كما هي.
+PERSISTENT_DIR = Path("/data")
+if PERSISTENT_DIR.exists() and PERSISTENT_DIR.is_dir():
+    DB_FILE = PERSISTENT_DIR / "attendance.db"
+    BACKUP_DIR = PERSISTENT_DIR / "backups"
+else:
+    DB_FILE = BASE_DIR / "attendance.db"
+    BACKUP_DIR = BASE_DIR / "backups"
 
 GRADES = [str(i) for i in range(5, 13)]
 SECTIONS = [str(i) for i in range(1, 6)]
