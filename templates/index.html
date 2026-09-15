@@ -1541,6 +1541,8 @@
                     ➕ إضافة طالبة
                 </button>
 
+                <button class="subtab" onclick="openStudentTab('importStudentsTab', this)">📥 تحديث من Excel</button>
+
                 <button
                     class="subtab"
                     onclick="openStudentTab('phonesTab', this)"
@@ -1757,6 +1759,23 @@
 
             </div>
 
+
+            <div id="importStudentsTab" class="student-tab">
+                <div class="main-card">
+                    <h3>📥 تحديث قائمة الطالبات من Excel</h3>
+                    <p>يضيف النظام الطالبات الجديدات ويحدّث بيانات الموجودات دون حذف سجلات الغياب السابقة.</p>
+                    <div class="field">
+                        <label>ملف Excel</label>
+                        <input id="studentsExcelFile" type="file" accept=".xlsx,.xls">
+                        <small>الأعمدة: اسم الطالبة، الصف، رقم هاتف الأب، رقم هاتف الأم. مثال الصف: 5/4</small>
+                    </div>
+                    <div class="action-buttons">
+                        <button class="btn btn-primary" onclick="previewStudentsExcel()">🔎 معاينة التحديث</button>
+                        <button id="confirmExcelImportBtn" class="btn btn-success-soft hidden" onclick="confirmStudentsExcelImport()">✅ تأكيد التحديث</button>
+                    </div>
+                    <div id="excelImportPreview" class="management-results"><div class="empty-state">اختاري ملف Excel ثم اضغطي معاينة.</div></div>
+                </div>
+            </div>
 
             <div
                 id="phonesTab"

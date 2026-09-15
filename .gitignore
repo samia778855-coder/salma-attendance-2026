@@ -1,0 +1,7 @@
+attendance.db
+data/students.xlsx
+.venv/
+__pycache__/
+*.pyc
+backups/
+.env

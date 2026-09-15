@@ -748,7 +748,7 @@ function renderSelectedStudents() {
 
     const container =
         document.getElementById(
-            "selectedStudents"
+                        "selectedStudents"
         );
 
     if (!selectedStudentIds.size) {
@@ -1284,7 +1284,7 @@ function whatsappButton(
     }
 
     const url =
-        "https://web.whatsapp.com/send" +
+        "https://api.whatsapp.com/send" +
         "?phone=" +
         encodeURIComponent(normalized) +
         "&text=" +
@@ -1494,84 +1494,84 @@ async function loadAlerts() {
                                         غير متوفر
                                     </span>
                                   `;
+        
+const father =
+    row.father_phone_status ===
+    "متوفر"
 
-                        const father =
-                            row.father_phone_status ===
-                            "متوفر"
+        ? whatsappButton(
+            row.id,
+            row.father_phone,
+            message,
+            "الأب",
+            "إنذار غياب"
+        )
 
-                                ? whatsappButton(
-                                    row.id,
-                                    row.father_phone,
-                                    message,
-                                    "الأب",
-                                    "إنذار غياب"
-                                )
+        : `
+            <span class="btn btn-disabled">
+                غير متوفر
+            </span>
+          `;
 
-                                : `
-                                    <span class="btn btn-disabled">
-                                        غير متوفر
-                                    </span>
-                                  `;
+return `
+    <tr>
 
-                        return `
-                            <tr>
+        <td>
+            ${index + 1}
+        </td>
 
-                                <td>
-                                    ${index + 1}
-                                </td>
+        <td>
+            <strong>
+                ${escapeHtml(row.student_name)}
+            </strong>
+        </td>
 
-                                <td>
-                                    <strong>
-                                        ${escapeHtml(row.student_name)}
-                                    </strong>
-                                </td>
+        <td>
+            ${row.grade}/${row.section}
+        </td>
 
-                                <td>
-                                    ${row.grade}/${row.section}
-                                </td>
+        <td>
+            <strong>
+                ${row.absence_count}
+            </strong>
+        </td>
 
-                                <td>
-                                    <strong>
-                                        ${row.absence_count}
-                                    </strong>
-                                </td>
+        <td>
+            ${row.last_absence || "-"}
+        </td>
 
-                                <td>
-                                    ${row.last_absence || "-"}
-                                </td>
+        <td>
+            <span class="alert-badge">
+                🔴 يحتاج متابعة
+            </span>
+        </td>
 
-                                <td>
-                                    <span class="alert-badge">
-                                        🔴 يحتاج متابعة
-                                    </span>
-                                </td>
+        <td>
+            ${mother}
+        </td>
 
-                                <td>
-                                    ${mother}
-                                </td>
+        <td>
+            ${father}
+        </td>
 
-                                <td>
-                                    ${father}
-                                </td>
+    </tr>
+`;
 
-                            </tr>
-                        `;
+}
+)
+.join("");
 
-                    }
-                )
-                .join("");
+} catch (error) {
 
-    } catch (error) {
+body.innerHTML = `
+    <tr>
+        <td colspan="8">
+            تعذر تحميل التنبيهات.
+        </td>
+    </tr>
+`;
 
-        body.innerHTML = `
-            <tr>
-                <td colspan="8">
-                    تعذر تحميل التنبيهات.
-                </td>
-            </tr>
-        `;
-
-    }
+}
 
 }
 
@@ -1582,498 +1582,497 @@ async function loadAlerts() {
 
 async function loadReport() {
 
-    const type =
-        document.getElementById(
-            "reportType"
-        ).value;
+const type =
+document.getElementById(
+    "reportType"
+).value;
 
-    const reportDate =
-        document.getElementById(
-            "reportDate"
-        ).value;
+const reportDate =
+document.getElementById(
+    "reportDate"
+).value;
 
-    const month =
-        document.getElementById(
-            "reportMonth"
-        ).value;
+const month =
+document.getElementById(
+    "reportMonth"
+).value;
 
-    const grade =
-        document.getElementById(
-            "reportGrade"
-        ).value;
+const grade =
+document.getElementById(
+    "reportGrade"
+).value;
 
-    const section =
-        document.getElementById(
-            "reportSection"
-        ).value;
+const section =
+document.getElementById(
+    "reportSection"
+).value;
 
-    const url =
-        `/api/reports?type=${encodeURIComponent(type)}` +
-        `&date=${encodeURIComponent(reportDate)}` +
-        `&month=${encodeURIComponent(month)}` +
-        `&grade=${encodeURIComponent(grade)}` +
-        `&section=${encodeURIComponent(section)}`;
+const url =
+`/api/reports?type=${encodeURIComponent(type)}` +
+`&date=${encodeURIComponent(reportDate)}` +
+`&month=${encodeURIComponent(month)}` +
+`&grade=${encodeURIComponent(grade)}` +
+`&section=${encodeURIComponent(section)}`;
 
-    try {
+try {
 
-        const response =
-            await fetch(url);
+const response =
+    await fetch(url);
 
-        const rows =
-            await response.json();
+const rows =
+    await response.json();
 
-        renderReport(
-            type,
-            rows
-        );
+renderReport(
+    type,
+    rows
+);
 
-    } catch (error) {
+} catch (error) {
 
-        showMessage(
-            "تعذر تحميل التقرير.",
-            "error"
-        );
+showMessage(
+    "تعذر تحميل التقرير.",
+    "error"
+);
 
-    }
+}
 
 }
 
 
 function renderReport(type, rows) {
 
-    const head =
-        document.getElementById(
-            "reportHead"
-        );
-
-    const body =
-        document.getElementById(
-            "reportBody"
-        );
-
-    const summary =
-        document.getElementById(
-            "reportSummary"
-        );
-
-    const visual =
-        document.getElementById(
-            "reportVisual"
-        );
-
-    visual.innerHTML = "";
-    visual.classList.add("hidden");
-
-    if (!rows.length) {
-
-        summary.textContent =
-            "لا توجد بيانات مطابقة.";
-
-        head.innerHTML = "";
-
-        body.innerHTML = `
-            <tr>
-                <td>
-                    لا توجد بيانات لهذا التقرير.
-                </td>
-            </tr>
-        `;
-
-        return;
-    }
-
-    if (type === "daily") {
-
-        summary.textContent =
-            `عدد الغائبات: ${rows.length}`;
-
-        head.innerHTML = `
-            <tr>
-                <th>#</th>
-                <th>اسم الطالبة</th>
-                <th>الصف</th>
-                <th>التاريخ</th>
-                <th>المعلمة</th>
-                <th>الحالة</th>
-                <th>الملاحظة</th>
-            </tr>
-        `;
-
-        body.innerHTML =
-            rows
-                .map(
-                    (row, index) => `
-                        <tr>
-
-                            <td>
-                                ${index + 1}
-                            </td>
-
-                            <td>
-                                ${escapeHtml(row.student_name)}
-                            </td>
-
-                            <td>
-                                ${row.grade}/${row.section}
-                            </td>
-
-                            <td>
-                                ${row.attendance_date}
-                            </td>
-
-                            <td>
-                                ${escapeHtml(row.teacher_name)}
-                            </td>
-
-                            <td>
-                                ${escapeHtml(row.absence_status || "مسجل")}
-                            </td>
-
-                            <td>
-                                ${escapeHtml(row.note || "-")}
-                            </td>
-
-                        </tr>
-                    `
-                )
-                .join("");
-
-    }
-
-
-    if (type === "monthly") {
-
-        summary.textContent =
-            `عدد الطالبات اللاتي لديهن غياب خلال الشهر: ${rows.length}`;
-
-        head.innerHTML = `
-            <tr>
-                <th>#</th>
-                <th>اسم الطالبة</th>
-                <th>الصف</th>
-                <th>تواريخ الغياب</th>
-                <th>عدد الأيام</th>
-            </tr>
-        `;
-
-        body.innerHTML =
-            rows
-                .map(
-                    (row, index) => `
-                        <tr>
-
-                            <td>
-                                ${index + 1}
-                            </td>
-
-                            <td>
-                                ${escapeHtml(row.student_name)}
-                            </td>
-
-                            <td>
-                                ${row.grade}/${row.section}
-                            </td>
-
-                            <td>
-                                ${escapeHtml(row.absence_dates || "")}
-                            </td>
-
-                            <td>
-                                <strong>
-                                    ${row.absence_count}
-                                </strong>
-                            </td>
-
-                        </tr>
-                    `
-                )
-                .join("");
-
-    }
-
-
-    if (type === "classes") {
-
-        const highest = rows[0];
-
-        const lowest =
-            rows[rows.length - 1];
-
-        summary.innerHTML =
-            `🔺 الأعلى: <strong>${highest.grade}/${highest.section}</strong> (${highest.absence_count})` +
-            ` &nbsp;&nbsp; | &nbsp;&nbsp; ` +
-            `🔻 الأقل: <strong>${lowest.grade}/${lowest.section}</strong> (${lowest.absence_count})`;
-
-        head.innerHTML = `
-            <tr>
-                <th>الترتيب</th>
-                <th>الصف</th>
-                <th>عدد حالات الغياب</th>
-            </tr>
-        `;
-
-        body.innerHTML =
-            rows
-                .map(
-                    (row, index) => `
-                        <tr>
-
-                            <td>
-                                ${index + 1}
-                            </td>
-
-                            <td>
-                                ${row.grade}/${row.section}
-                            </td>
-
-                            <td>
-                                <strong>
-                                    ${row.absence_count}
-                                </strong>
-                            </td>
-
-                        </tr>
-                    `
-                )
-                .join("");
-
-        renderVisualBars(
-            rows.map(
-                row => ({
-                    label:
-                        `${row.grade}/${row.section}`,
-
-                    value:
-                        row.absence_count
-                })
-            )
-        );
-
-    }
-
-
-    if (type === "students") {
-
-        summary.textContent =
-            "ترتيب الطالبات حسب عدد أيام الغياب خلال العام الدراسي.";
-
-        head.innerHTML = `
-            <tr>
-                <th>الترتيب</th>
-                <th>اسم الطالبة</th>
-                <th>الصف</th>
-                <th>أيام الغياب</th>
-                <th>آخر غياب</th>
-            </tr>
-        `;
-
-        body.innerHTML =
-            rows
-                .map(
-                    (row, index) => `
-                        <tr>
-
-                            <td>
-                                ${index + 1}
-                            </td>
-
-                            <td>
-                                ${escapeHtml(row.student_name)}
-                            </td>
-
-                            <td>
-                                ${row.grade}/${row.section}
-                            </td>
-
-                            <td>
-                                <strong>
-                                    ${row.absence_count}
-                                </strong>
-                            </td>
-
-                            <td>
-                                ${row.last_absence || "-"}
-                            </td>
-
-                        </tr>
-                    `
-                )
-                .join("");
-
-        renderVisualBars(
-            rows
-                .slice(0, 10)
-                .map(
-                    row => ({
-                        label:
-                            row.student_name,
-
-                        value:
-                            row.absence_count
-                    })
-                )
-        );
-
-    }
-
-
-    if (type === "weekday") {
-
-        summary.textContent =
-            "تحليل حالات الغياب حسب أيام الأسبوع.";
-
-        head.innerHTML = `
-            <tr>
-                <th>اليوم</th>
-                <th>عدد حالات الغياب</th>
-            </tr>
-        `;
-
-        body.innerHTML =
-            rows
-                .map(
-                    row => `
-                        <tr>
-
-                            <td>
-                                ${escapeHtml(row.weekday_name)}
-                            </td>
-
-                            <td>
-                                <strong>
-                                    ${row.absence_count}
-                                </strong>
-                            </td>
-
-                        </tr>
-                    `
-                )
-                .join("");
-
-        renderVisualBars(
-            rows.map(
-                row => ({
-                    label:
-                        row.weekday_name,
-
-                    value:
-                        row.absence_count
-                })
-            )
-        );
-
-    }
+const head =
+document.getElementById(
+    "reportHead"
+);
+
+const body =
+document.getElementById(
+    "reportBody"
+);
+
+const summary =
+document.getElementById(
+    "reportSummary"
+);
+
+const visual =
+document.getElementById(
+    "reportVisual"
+);
+
+visual.innerHTML = "";
+visual.classList.add("hidden");
+
+if (!rows.length) {
+
+summary.textContent =
+    "لا توجد بيانات مطابقة.";
+
+head.innerHTML = "";
+
+body.innerHTML = `
+    <tr>
+        <td>
+            لا توجد بيانات لهذا التقرير.
+        </td>
+    </tr>
+`;
+
+return;
+}
+
+if (type === "daily") {
+
+summary.textContent =
+    `عدد الغائبات: ${rows.length}`;
+
+head.innerHTML = `
+    <tr>
+        <th>#</th>
+        <th>اسم الطالبة</th>
+        <th>الصف</th>
+        <th>التاريخ</th>
+        <th>المعلمة</th>
+        <th>الحالة</th>
+        <th>الملاحظة</th>
+    </tr>
+`;
+
+body.innerHTML =
+    rows
+        .map(
+            (row, index) => `
+                <tr>
+
+                    <td>
+                        ${index + 1}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(row.student_name)}
+                    </td>
+
+                    <td>
+                        ${row.grade}/${row.section}
+                    </td>
+
+                    <td>
+                        ${row.attendance_date}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(row.teacher_name)}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(row.absence_status || "مسجل")}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(row.note || "-")}
+                    </td>
+
+                </tr>
+            `
+        )
+        .join("");
+
+}
+
+
+if (type === "monthly") {
+
+summary.textContent =
+    `عدد الطالبات اللاتي لديهن غياب خلال الشهر: ${rows.length}`;
+
+head.innerHTML = `
+    <tr>
+        <th>#</th>
+        <th>اسم الطالبة</th>
+        <th>الصف</th>
+        <th>تواريخ الغياب</th>
+        <th>عدد الأيام</th>
+    </tr>
+`;
+
+body.innerHTML =
+    rows
+        .map(
+            (row, index) => `
+                <tr>
+
+                    <td>
+                        ${index + 1}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(row.student_name)}
+                    </td>
+
+                    <td>
+                        ${row.grade}/${row.section}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(row.absence_dates || "")}
+                    </td>
+
+                    <td>
+                        <strong>
+                            ${row.absence_count}
+                        </strong>
+                    </td>
+
+                </tr>
+            `
+        )
+        .join("");
+
+}
+
+
+if (type === "classes") {
+
+const highest = rows[0];
+
+const lowest =
+    rows[rows.length - 1];
+
+summary.innerHTML =
+    `🔺 الأعلى: <strong>${highest.grade}/${highest.section}</strong> (${highest.absence_count})` +
+    ` &nbsp;&nbsp; | &nbsp;&nbsp; ` +
+    `🔻 الأقل: <strong>${lowest.grade}/${lowest.section}</strong> (${lowest.absence_count})`;
+
+head.innerHTML = `
+    <tr>
+        <th>الترتيب</th>
+        <th>الصف</th>
+        <th>عدد حالات الغياب</th>
+    </tr>
+`;
+
+body.innerHTML =
+    rows
+        .map(
+            (row, index) => `
+                <tr>
+
+                    <td>
+                        ${index + 1}
+                    </td>
+
+                    <td>
+                        ${row.grade}/${row.section}
+                    </td>
+
+                    <td>
+                        <strong>
+                            ${row.absence_count}
+                        </strong>
+                    </td>
+
+                </tr>
+            `
+        )
+        .join("");
+
+renderVisualBars(
+    rows.map(
+        row => ({
+            label:
+                `${row.grade}/${row.section}`,
+
+            value:
+                row.absence_count
+        })
+    )
+);
+
+}
+
+
+if (type === "students") {
+
+summary.textContent =
+    "ترتيب الطالبات حسب عدد أيام الغياب خلال العام الدراسي.";
+
+head.innerHTML = `
+    <tr>
+        <th>الترتيب</th>
+        <th>اسم الطالبة</th>
+        <th>الصف</th>
+        <th>أيام الغياب</th>
+        <th>آخر غياب</th>
+    </tr>
+`;
+
+body.innerHTML =
+    rows
+        .map(
+            (row, index) => `
+                <tr>
+
+                    <td>
+                        ${index + 1}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(row.student_name)}
+                    </td>
+
+                    <td>
+                        ${row.grade}/${row.section}
+                    </td>
+
+                    <td>
+                        <strong>
+                            ${row.absence_count}
+                        </strong>
+                    </td>
+
+                    <td>
+                        ${row.last_absence || "-"}
+                    </td>
+
+                </tr>
+            `
+        )
+        .join("");
+
+renderVisualBars(
+    rows
+        .slice(0, 10)
+        .map(
+            row => ({
+                label:
+                    row.student_name,
+
+                value:
+                    row.absence_count
+            })
+        )
+);
+
+}
+
+
+if (type === "weekday") {
+
+summary.textContent =
+    "تحليل حالات الغياب حسب أيام الأسبوع.";
+
+head.innerHTML = `
+    <tr>
+        <th>اليوم</th>
+        <th>عدد حالات الغياب</th>
+    </tr>
+`;
+
+body.innerHTML =
+    rows
+        .map(
+            row => `
+                <tr>
+
+                    <td>
+                        ${escapeHtml(row.weekday_name)}
+                    </td>
+
+                    <td>
+                        <strong>
+                            ${row.absence_count}
+                        </strong>
+                    </td>
+
+                </tr>
+            `
+        )
+        .join("");
+
+renderVisualBars(
+    rows.map(
+        row => ({
+            label:
+                row.weekday_name,
+
+            value:
+                row.absence_count
+        })
+    )
+);
+
+}
 
 }
 
 
 function renderVisualBars(rows) {
 
-    const visual =
-        document.getElementById(
-            "reportVisual"
-        );
+const visual =
+document.getElementById(
+    "reportVisual"
+);
 
-    if (!rows.length) {
-        return;
-    }
+if (!rows.length) {
+return;
+}
 
-    const maxValue =
-        Math.max(
-            ...rows.map(
-                row =>
-                    Number(row.value) || 0
-            ),
-            1
-        );
+const maxValue =
+Math.max(
+    ...rows.map(
+        row =>
+            Number(row.value) || 0
+    ),
+    1
+);
 
-    visual.innerHTML =
-        rows
-            .map(
-                row => {
+visual.innerHTML =
+rows
+    .map(
+        row => {
 
-                    const width =
-                        Math.round(
-                            (
-                                Number(row.value) /
-                                maxValue
-                            ) * 100
-                        );
+            const width =
+                Math.round(
+                    (
+                        Number(row.value) /
+                        maxValue
+                    ) * 100
+                );
 
-                    return `
-                        <div class="visual-row">
+            return `
+                <div class="visual-row">
 
-                            <span>
-                                ${escapeHtml(row.label)}
-                            </span>
+                    <span>
+                        ${escapeHtml(row.label)}
+                    </span>
 
-                            <div class="visual-bar">
+                    <div class="visual-bar">
 
-                                <div
-                                    class="visual-fill"
-                                    style="width:${width}%"
-                                ></div>
+                        <div
+                            class="visual-fill"
+                            style="width:${width}%"
+                        ></div>
 
-                            </div>
+                    </div>
 
-                            <strong>
-                                ${row.value}
-                            </strong>
+                    <strong>
+                        ${row.value}
+                    </strong>
 
-                        </div>
-                    `;
+                </div>
+            `;
 
-                }
-            )
-            .join("");
+        }
+    )
+    .join("");
 
-    visual.classList.remove("hidden");
+visual.classList.remove("hidden");
 
 }
 
 
 function exportReport() {
 
-    const type =
-        document.getElementById(
-            "reportType"
-        ).value;
+const type =
+document.getElementById(
+    "reportType"
+).value;
 
-    const reportDate =
-        document.getElementById(
-            "reportDate"
-        ).value;
+const reportDate =
+document.getElementById(
+    "reportDate"
+).value;
 
-    const month =
-        document.getElementById(
-            "reportMonth"
-        ).value;
+const month =
+document.getElementById(
+    "reportMonth"
+).value;
 
-    if (
-        type !== "daily" &&
-        type !== "monthly"
-    ) {
+if (
+type !== "daily" &&
+type !== "monthly"
+) {
 
-        showMessage(
-            "Excel متاح حاليًا للتقرير اليومي والشهري.",
-            "error"
-        );
+showMessage(
+    "Excel متاح حاليًا للتقرير اليومي والشهري.",
+    "error"
+);
 
-        return;
-    }
+return;
+}
 
-    window.location.href =
-        `/export-excel?type=${encodeURIComponent(type)}` +
-        `&date=${encodeURIComponent(reportDate)}` +
-        `&month=${encodeURIComponent(month)}`;
+window.location.href =
+`/export-excel?type=${encodeURIComponent(type)}` +
+`&date=${encodeURIComponent(reportDate)}` +
+`&month=${encodeURIComponent(month)}`;
 
 }
 
 
 /* =========================================================
    STUDENT MANAGEMENT
-========================================================= */
-
+========================================================= */                            
 async function searchManagementStudents() {
 
     const query =
@@ -2128,7 +2127,6 @@ async function searchManagementStudents() {
                         <div class="management-result-item">
 
                             <div>
-
                                 <strong>
                                     ${escapeHtml(student.student_name)}
                                 </strong>
@@ -2136,7 +2134,6 @@ async function searchManagementStudents() {
                                 <small>
                                     الصف ${student.grade}/${student.section}
                                 </small>
-
                             </div>
 
                             <div>
@@ -2574,9 +2571,7 @@ async function loadMissingPhones() {
             <table>
 
                 <thead>
-
                     <tr>
-
                         <th>#</th>
                         <th>اسم الطالبة</th>
                         <th>الصف</th>
@@ -2584,9 +2579,7 @@ async function loadMissingPhones() {
                         <th>حالة الأب</th>
                         <th>هاتف الأم</th>
                         <th>حالة الأم</th>
-
                     </tr>
-
                 </thead>
 
                 <tbody>
@@ -2650,9 +2643,307 @@ async function loadMissingPhones() {
 
 
 /* =========================================================
-   SETTINGS
+   EXCEL STUDENT UPDATE
 ========================================================= */
 
+async function previewStudentsExcel() {
+
+    const input =
+        document.getElementById(
+            "studentsExcelFile"
+        );
+
+    const preview =
+        document.getElementById(
+            "excelImportPreview"
+        );
+
+    const btn =
+        document.getElementById(
+            "confirmExcelImportBtn"
+        );
+
+    btn.classList.add("hidden");
+
+    if (!input.files.length) {
+
+        showMessage(
+            "اختاري ملف Excel أولًا.",
+            "error"
+        );
+
+        return;
+    }
+
+    preview.innerHTML = `
+        <div class="empty-state">
+            جاري فحص الملف...
+        </div>
+    `;
+
+    const form =
+        new FormData();
+
+    form.append(
+        "file",
+        input.files[0]
+    );
+
+    try {
+
+        const response =
+            await fetch(
+                "/api/students/import-preview",
+                {
+                    method: "POST",
+                    body: form
+                }
+            );
+
+        const data =
+            await response.json();
+
+        if (
+            !response.ok ||
+            !data.success
+        ) {
+
+            preview.innerHTML = `
+                <div class="empty-state">
+                    ${escapeHtml(
+                        data.message ||
+                        "تعذر فحص الملف."
+                    )}
+                </div>
+            `;
+
+            return;
+        }
+
+        let html = `
+            <div class="management-result-item">
+
+                <div>
+                    <strong>
+                        إجمالي صالح
+                    </strong>
+                    <small>
+                        ${data.total_valid}
+                    </small>
+                </div>
+
+                <div>
+                    ➕ جديد:
+                    <strong>
+                        ${data.new_count}
+                    </strong>
+                </div>
+
+                <div>
+                    🔄 تحديث:
+                    <strong>
+                        ${data.update_count}
+                    </strong>
+                </div>
+
+                <div>
+                    ✅ بدون تغيير:
+                    <strong>
+                        ${data.unchanged_count}
+                    </strong>
+                </div>
+
+                <div>
+                    ⚠️ مراجعة:
+                    <strong>
+                        ${data.issue_count}
+                    </strong>
+                </div>
+
+            </div>
+        `;
+
+        if (data.updates.length) {
+
+            html +=
+                "<h4>التغييرات المتوقعة</h4>" +
+
+                data.updates
+                    .slice(0, 30)
+                    .map(
+                        x => `
+                            <div class="management-result-item">
+
+                                <div>
+
+                                    <strong>
+                                        ${escapeHtml(x.student_name)}
+                                    </strong>
+
+                                    <small>
+                                        ${escapeHtml(x.old_class)}
+                                        ←
+                                        ${escapeHtml(x.new_class)}
+                                    </small>
+
+                                </div>
+
+                            </div>
+                        `
+                    )
+                    .join("");
+
+        }
+
+        if (data.issues.length) {
+
+            html +=
+                "<h4>⚠️ تحتاج مراجعة</h4>" +
+
+                data.issues
+                    .slice(0, 30)
+                    .map(
+                        x => `
+                            <div class="management-result-item">
+
+                                <div>
+
+                                    <strong>
+                                        ${escapeHtml(x.student_name)}
+                                    </strong>
+
+                                    <small>
+                                        السطر ${escapeHtml(x.row)}
+                                        —
+                                        ${escapeHtml(x.reason)}
+                                    </small>
+
+                                </div>
+
+                            </div>
+                        `
+                    )
+                    .join("");
+
+        }
+
+        preview.innerHTML =
+            html;
+
+        if (
+            data.issue_count === 0
+        ) {
+
+            btn.classList.remove(
+                "hidden"
+            );
+
+        }
+
+    } catch (error) {
+
+        preview.innerHTML = `
+            <div class="empty-state">
+                تعذر الاتصال بالنظام.
+            </div>
+        `;
+
+    }
+
+}
+
+
+async function confirmStudentsExcelImport() {
+
+    const input =
+        document.getElementById(
+            "studentsExcelFile"
+        );
+
+    if (!input.files.length) {
+        return;
+    }
+
+    if (
+        !confirm(
+            "سيتم إضافة الجديد وتحديث الموجود مع الاحتفاظ بجميع سجلات الغياب السابقة. هل تريدين المتابعة؟"
+        )
+    ) {
+        return;
+    }
+
+    const form =
+        new FormData();
+
+    form.append(
+        "file",
+        input.files[0]
+    );
+
+    try {
+
+        const response =
+            await fetch(
+                "/api/students/import-confirm",
+                {
+                    method: "POST",
+                    body: form
+                }
+            );
+
+        const data =
+            await response.json();
+
+        if (
+            !response.ok ||
+            !data.success
+        ) {
+
+            showMessage(
+                data.message ||
+                "تعذر التحديث.",
+                "error"
+            );
+
+            return;
+        }
+
+        showMessage(
+            data.message
+        );
+
+        document
+            .getElementById(
+                "confirmExcelImportBtn"
+            )
+            .classList
+            .add("hidden");
+
+        document.getElementById(
+            "excelImportPreview"
+        ).innerHTML = `
+            <div class="empty-state">
+                ✅ ${escapeHtml(data.message)}
+            </div>
+        `;
+
+        await refreshAll();
+
+    } catch (error) {
+
+        showMessage(
+            "تعذر تنفيذ تحديث Excel.",
+            "error"
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   SETTINGS
+========================================================= */
 async function loadSettings() {
 
     try {
@@ -2662,48 +2953,68 @@ async function loadSettings() {
                 "/api/settings"
             );
 
-        systemSettings =
+        const data =
             await response.json();
 
-        ALERT_LIMIT =
-            Number(
-                systemSettings.absence_alert_limit
-            ) || 8;
+        systemSettings = {
+            ...systemSettings,
+            ...data
+        };
 
-        document.getElementById(
-            "settingSchoolName"
-        ).value =
-            systemSettings.school_name || "";
+        if (
+            document.getElementById(
+                "settingSchoolName"
+            )
+        ) {
+            document.getElementById(
+                "settingSchoolName"
+            ).value =
+                data.school_name || "";
+        }
 
-        document.getElementById(
-            "settingAcademicYear"
-        ).value =
-            systemSettings.academic_year || "";
+        if (
+            document.getElementById(
+                "settingAcademicYear"
+            )
+        ) {
+            document.getElementById(
+                "settingAcademicYear"
+            ).value =
+                data.academic_year || "";
+        }
 
-        document.getElementById(
-            "settingAlertLimit"
-        ).value =
-            ALERT_LIMIT;
+        if (
+            document.getElementById(
+                "settingAlertLimit"
+            )
+        ) {
+            document.getElementById(
+                "settingAlertLimit"
+            ).value =
+                data.absence_alert_limit || 8;
+        }
 
-        document.getElementById(
-            "settingDailyMessage"
-        ).value =
-            systemSettings.daily_message || "";
+        if (
+            document.getElementById(
+                "settingDailyMessage"
+            )
+        ) {
+            document.getElementById(
+                "settingDailyMessage"
+            ).value =
+                data.daily_message || "";
+        }
 
-        document.getElementById(
-            "settingAlertMessage"
-        ).value =
-            systemSettings.alert_message || "";
-
-        document.getElementById(
-            "currentAlertLimit"
-        ).textContent =
-            ALERT_LIMIT;
-
-        document.getElementById(
-            "headerAcademicYear"
-        ).textContent =
-            systemSettings.academic_year || "";
+        if (
+            document.getElementById(
+                "settingAlertMessage"
+            )
+        ) {
+            document.getElementById(
+                "settingAlertMessage"
+            ).value =
+                data.alert_message || "";
+        }
 
     } catch (error) {
 
@@ -2741,8 +3052,7 @@ async function saveSettings() {
                 .getElementById(
                     "settingAlertLimit"
                 )
-                .value
-                .trim(),
+                .value,
 
         daily_message:
             document
@@ -2787,19 +3097,23 @@ async function saveSettings() {
         if (!response.ok) {
 
             showMessage(
-                data.message ||
-                "تعذر الحفظ.",
+                data.message,
                 "error"
             );
 
             return;
         }
 
+        systemSettings = {
+            ...systemSettings,
+            ...payload
+        };
+
         showMessage(
-            data.message
+            data.message ||
+            "تم حفظ الإعدادات بنجاح."
         );
 
-        await loadSettings();
         await refreshAll();
 
     } catch (error) {
@@ -2815,144 +3129,247 @@ async function saveSettings() {
 
 
 /* =========================================================
+   BACKUP
+========================================================= */
+
+async function createBackup() {
+
+    try {
+
+        const response =
+            await fetch(
+                "/api/backup",
+                {
+                    method: "POST"
+                }
+            );
+
+        if (!response.ok) {
+
+            const data =
+                await response.json();
+
+            showMessage(
+                data.message ||
+                "تعذر إنشاء النسخة الاحتياطية.",
+                "error"
+            );
+
+            return;
+        }
+
+        const blob =
+            await response.blob();
+
+        const disposition =
+            response.headers.get(
+                "Content-Disposition"
+            );
+
+        let filename =
+            "attendance_backup.db";
+
+        if (disposition) {
+
+            const match =
+                disposition.match(
+                    /filename="?([^"]+)"?/
+                );
+
+            if (match) {
+                filename = match[1];
+            }
+
+        }
+
+        const url =
+            URL.createObjectURL(blob);
+
+        const link =
+            document.createElement("a");
+
+        link.href = url;
+        link.download = filename;
+
+        document.body.appendChild(
+            link
+        );
+
+        link.click();
+        link.remove();
+
+        URL.revokeObjectURL(url);
+
+        showMessage(
+            "تم إنشاء النسخة الاحتياطية."
+        );
+
+    } catch (error) {
+
+        showMessage(
+            "تعذر إنشاء النسخة الاحتياطية.",
+            "error"
+        );
+
+    }
+
+}
+
+
+/* =========================================================
    MODALS
 ========================================================= */
 
-function showMissingClassesModal() {
+function openModal(modalId) {
 
-    renderMissingClasses();
+    const modal =
+        document.getElementById(
+            modalId
+        );
 
-    document.getElementById(
-        "missingModal"
-    ).classList.remove("hidden");
+    if (modal) {
+
+        modal.classList.remove(
+            "hidden"
+        );
+
+    }
 
 }
 
 
 function closeModal(modalId) {
 
-    document.getElementById(
-        modalId
-    ).classList.add("hidden");
-
-}
-
-
-function closeModalOutside(
-    event,
-    modalId
-) {
-
-    if (event.target.id === modalId) {
-        closeModal(modalId);
-    }
-
-}
-
-
-/* =========================================================
-   PHONE
-========================================================= */
-
-function normalizePhoneForWhatsApp(phone) {
-
-    if (!phone) {
-        return "";
-    }
-
-    let number =
-        convertArabicDigits(
-            String(phone)
-        )
-        .replace(
-            /\D/g,
-            ""
+    const modal =
+        document.getElementById(
+            modalId
         );
 
-    if (
-        number.startsWith("00968")
-    ) {
-        number =
-            number.slice(5);
-    }
+    if (modal) {
 
-    if (
-        number.startsWith("968") &&
-        number.length === 11
-    ) {
-        return number;
-    }
-
-    if (number.length === 8) {
-        return "968" + number;
-    }
-
-    return "";
-
-}
-
-
-function normalizeLocalPhone(value) {
-
-    if (!value) {
-        return "";
-    }
-
-    let number =
-        convertArabicDigits(
-            String(value)
-        )
-        .replace(
-            /\D/g,
-            ""
+        modal.classList.add(
+            "hidden"
         );
 
-    if (
-        number.startsWith("00968")
-    ) {
-        number =
-            number.slice(5);
     }
-
-    if (
-        number.startsWith("968") &&
-        number.length === 11
-    ) {
-        number =
-            number.slice(3);
-    }
-
-    return number;
 
 }
 
 
-function convertArabicDigits(value) {
+function openMissingClassesModal() {
 
-    const map = {
-        "٠": "0",
-        "١": "1",
-        "٢": "2",
-        "٣": "3",
-        "٤": "4",
-        "٥": "5",
-        "٦": "6",
-        "٧": "7",
-        "٨": "8",
-        "٩": "9"
-    };
+    renderMissingClasses();
 
-    return value.replace(
-        /[٠-٩]/g,
-        digit =>
-            map[digit]
+    openModal(
+        "missingClassesModal"
     );
 
 }
 
 
 /* =========================================================
-   HELPERS
+   PHONE HELPERS
+========================================================= */
+
+function convertArabicDigits(value) {
+
+    if (
+        value === null ||
+        value === undefined
+    ) {
+        return "";
+    }
+
+    const arabicDigits =
+        "٠١٢٣٤٥٦٧٨٩";
+
+    const persianDigits =
+        "۰۱۲۳۴۵۶۷۸۹";
+
+    return String(value)
+        .replace(
+            /[٠-٩]/g,
+            digit =>
+                arabicDigits.indexOf(
+                    digit
+                )
+        )
+        .replace(
+            /[۰-۹]/g,
+            digit =>
+                persianDigits.indexOf(
+                    digit
+                )
+        );
+
+}
+
+
+function normalizeLocalPhone(value) {
+
+    let phone =
+        convertArabicDigits(
+            value
+        )
+            .replace(
+                /\D/g,
+                ""
+            );
+
+    if (!phone) {
+        return "";
+    }
+
+    if (
+        phone.startsWith("00968")
+    ) {
+        phone =
+            phone.slice(5);
+    }
+
+    if (
+        phone.startsWith("968") &&
+        phone.length > 8
+    ) {
+        phone =
+            phone.slice(3);
+    }
+
+    if (
+        phone.length > 8
+    ) {
+        phone =
+            phone.slice(-8);
+    }
+
+    return phone;
+
+}
+
+
+function normalizePhoneForWhatsApp(
+    value
+) {
+
+    const local =
+        normalizeLocalPhone(
+            value
+        );
+
+    if (
+        !local ||
+        local.length !== 8
+    ) {
+        return "";
+    }
+
+    return "968" + local;
+
+}
+
+
+/* =========================================================
+   DATE / TIME
 ========================================================= */
 
 function formatTime(value) {
@@ -2961,20 +3378,57 @@ function formatTime(value) {
         return "-";
     }
 
-    const text =
-        String(value);
+    try {
 
-    const parts =
-        text.split(" ");
+        const date =
+            new Date(value);
 
-    if (parts.length < 2) {
-        return text;
+        if (
+            Number.isNaN(
+                date.getTime()
+            )
+        ) {
+
+            const parts =
+                String(value)
+                    .split(" ");
+
+            if (
+                parts.length > 1
+            ) {
+
+                return parts[1]
+                    .slice(0, 5);
+
+            }
+
+            return value;
+        }
+
+        return date
+            .toLocaleTimeString(
+                "ar-OM",
+                {
+                    hour:
+                        "2-digit",
+
+                    minute:
+                        "2-digit"
+                }
+            );
+
+    } catch (error) {
+
+        return value;
+
     }
-
-    return parts[1].slice(0, 5);
 
 }
 
+
+/* =========================================================
+   ESCAPE HELPERS
+========================================================= */
 
 function escapeHtml(value) {
 
@@ -2986,25 +3440,59 @@ function escapeHtml(value) {
     }
 
     return String(value)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+        .replaceAll(
+            "&",
+            "&amp;"
+        )
+        .replaceAll(
+            "<",
+            "&lt;"
+        )
+        .replaceAll(
+            ">",
+            "&gt;"
+        )
+        .replaceAll(
+            '"',
+            "&quot;"
+        )
+        .replaceAll(
+            "'",
+            "&#039;"
+        );
 
 }
 
 
 function escapeJs(value) {
 
-    if (!value) {
+    if (
+        value === null ||
+        value === undefined
+    ) {
         return "";
     }
 
     return String(value)
-        .replace(/\\/g, "\\\\")
-        .replace(/'/g, "\\'")
-        .replace(/\n/g, " ")
-        .replace(/\r/g, " ");
+        .replaceAll(
+            "\\",
+            "\\\\"
+        )
+        .replaceAll(
+            "'",
+            "\\'"
+        )
+        .replaceAll(
+            '"',
+            '\\"'
+        )
+        .replaceAll(
+            "\n",
+            "\\n"
+        )
+        .replaceAll(
+            "\r",
+            "\\r"
+        );
 
 }

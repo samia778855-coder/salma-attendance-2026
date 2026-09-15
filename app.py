@@ -1086,6 +1086,84 @@ def missing_phones():
     ])
 
 
+
+def parse_class_value(value):
+    value = convert_arabic_digits(value).strip().replace("\\", "/").replace(" ", "")
+    parts = [x for x in value.split("/") if x]
+    if len(parts) < 2 or parts[0] not in GRADES or parts[1] not in SECTIONS:
+        return "", ""
+    return parts[0], parts[1]
+
+
+def read_students_excel(file_storage):
+    df = pd.read_excel(file_storage, dtype=str).fillna("")
+    required = ["اسم الطالبة", "الصف", "رقم هاتف الأب", "رقم هاتف الأم"]
+    if any(c not in df.columns for c in required):
+        raise ValueError("الأعمدة المطلوبة هي: " + "، ".join(required))
+    rows, issues, seen = [], [], set()
+    for idx, row in df.iterrows():
+        name = str(row["اسم الطالبة"]).strip()
+        grade, section = parse_class_value(row["الصف"])
+        father, mother = clean_phone(row["رقم هاتف الأب"]), clean_phone(row["رقم هاتف الأم"])
+        if not name or not grade or not section:
+            issues.append({"row": int(idx)+2, "student_name": name or "-", "reason": "اسم أو صف/شعبة غير صالح"}); continue
+        key = name.casefold()
+        if key in seen:
+            issues.append({"row": int(idx)+2, "student_name": name, "reason": "اسم مكرر داخل ملف Excel"}); continue
+        seen.add(key)
+        rows.append({"student_name":name,"grade":grade,"section":section,"father_phone":father,"mother_phone":mother,"father_phone_status":phone_status(father),"mother_phone_status":phone_status(mother)})
+    return rows, issues
+
+
+def compare_excel_students(rows, issues):
+    conn=get_db(); existing=conn.execute("SELECT * FROM students ORDER BY id").fetchall(); conn.close()
+    by_name={}
+    for r in existing: by_name.setdefault(str(r["student_name"]).strip().casefold(), []).append(r)
+    new_rows, updates, unchanged=[], [], 0
+    for item in rows:
+        matches=by_name.get(item["student_name"].casefold(), [])
+        if len(matches)>1:
+            issues.append({"row":"-","student_name":item["student_name"],"reason":"يوجد أكثر من سجل بنفس الاسم في قاعدة البيانات؛ يحتاج مراجعة يدوية"}); continue
+        if not matches: new_rows.append(item); continue
+        old=matches[0]
+        changed=any(str(old[k] or "") != str(item[k] or "") for k in ["grade","section","father_phone","mother_phone"]) or int(old["active"] or 0)!=1
+        if changed:
+            update=dict(item); update.update({"id":old["id"],"old_class":f'{old["grade"]}/{old["section"]}',"new_class":f'{item["grade"]}/{item["section"]}'})
+            updates.append(update)
+        else: unchanged += 1
+    return {"new":new_rows,"updates":updates,"unchanged":unchanged,"issues":issues}
+
+
+@app.route("/api/students/import-preview", methods=["POST"])
+def students_import_preview():
+    file=request.files.get("file")
+    if not file or not file.filename: return jsonify({"success":False,"message":"اختاري ملف Excel أولًا."}),400
+    try:
+        rows,issues=read_students_excel(file); result=compare_excel_students(rows,issues)
+        return jsonify({"success":True,"total_valid":len(rows),"new_count":len(result["new"]),"update_count":len(result["updates"]),"unchanged_count":result["unchanged"],"issue_count":len(result["issues"]),"updates":result["updates"][:100],"issues":result["issues"][:100]})
+    except Exception as error: return jsonify({"success":False,"message":f"تعذر قراءة الملف: {error}"}),400
+
+
+@app.route("/api/students/import-confirm", methods=["POST"])
+def students_import_confirm():
+    file=request.files.get("file")
+    if not file or not file.filename: return jsonify({"success":False,"message":"اختاري ملف Excel أولًا."}),400
+    try:
+        rows,issues=read_students_excel(file); result=compare_excel_students(rows,issues)
+        if result["issues"]: return jsonify({"success":False,"message":"يوجد في الملف بيانات تحتاج مراجعة. أصلحيها ثم أعيدي المعاينة."}),400
+        conn=get_db(); added=updated=0
+        try:
+            for x in result["new"]:
+                conn.execute("INSERT INTO students (student_name,grade,section,father_phone,mother_phone,father_phone_status,mother_phone_status,active) VALUES (?,?,?,?,?,?,?,1)",(x["student_name"],x["grade"],x["section"],x["father_phone"],x["mother_phone"],x["father_phone_status"],x["mother_phone_status"])); added+=1
+            for x in result["updates"]:
+                conn.execute("UPDATE students SET student_name=?,grade=?,section=?,father_phone=?,mother_phone=?,father_phone_status=?,mother_phone_status=?,active=1 WHERE id=?",(x["student_name"],x["grade"],x["section"],x["father_phone"],x["mother_phone"],x["father_phone_status"],x["mother_phone_status"],x["id"])); updated+=1
+            conn.commit()
+        except Exception: conn.rollback(); raise
+        finally: conn.close()
+        audit("تحديث الطالبات من Excel",f"تمت إضافة {added} وتحديث {updated} طالبة دون حذف سجلات الغياب","الإدارة")
+        return jsonify({"success":True,"message":f"تم التحديث بنجاح: إضافة {added}، تحديث {updated}، بدون تغيير {result['unchanged']}."})
+    except Exception as error: return jsonify({"success":False,"message":f"تعذر تنفيذ التحديث: {error}"}),400
+
 # =========================================================
 # ATTENDANCE
 # =========================================================
