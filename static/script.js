@@ -800,10 +800,25 @@ async function saveAbsence() {
             .value
             .trim();
 
+    const attendanceDate =
+        document.getElementById(
+            "attendanceDate"
+        ).value;
+
     if (!grade || !section) {
 
         showMessage(
             "اختاري المرحلة والشعبة أولًا.",
+            "error"
+        );
+
+        return;
+    }
+
+    if (!attendanceDate) {
+
+        showMessage(
+            "اختاري تاريخ الغياب.",
             "error"
         );
 
@@ -864,6 +879,9 @@ async function saveAbsence() {
 
                             teacher_name:
                                 teacherName,
+
+                            attendance_date:
+                                attendanceDate,
 
                             student_ids:
                                 Array.from(
@@ -1284,7 +1302,7 @@ function whatsappButton(
     }
 
     const url =
-        "https://api.whatsapp.com/send" +
+        "https://web.whatsapp.com/send" +
         "?phone=" +
         encodeURIComponent(normalized) +
         "&text=" +
@@ -1494,10 +1512,10 @@ async function loadAlerts() {
                                         غير متوفر
                                     </span>
                                   `;
-        
-const father =
-    row.father_phone_status ===
-    "متوفر"
+
+                        const father =
+                            row.father_phone_status ===
+                            "متوفر"
 
         ? whatsappButton(
             row.id,
@@ -2647,297 +2665,113 @@ async function loadMissingPhones() {
 ========================================================= */
 
 async function previewStudentsExcel() {
-
-    const input =
-        document.getElementById(
-            "studentsExcelFile"
-        );
-
-    const preview =
-        document.getElementById(
-            "excelImportPreview"
-        );
-
-    const btn =
-        document.getElementById(
-            "confirmExcelImportBtn"
-        );
+    const input = document.getElementById("studentsExcelFile");
+    const preview = document.getElementById("excelImportPreview");
+    const btn = document.getElementById("confirmExcelImportBtn");
 
     btn.classList.add("hidden");
+    btn.dataset.issueCount = "0";
 
     if (!input.files.length) {
-
-        showMessage(
-            "اختاري ملف Excel أولًا.",
-            "error"
-        );
-
+        showMessage("اختاري ملف Excel أولًا.", "error");
         return;
     }
 
-    preview.innerHTML = `
-        <div class="empty-state">
-            جاري فحص الملف...
-        </div>
-    `;
-
-    const form =
-        new FormData();
-
-    form.append(
-        "file",
-        input.files[0]
-    );
+    preview.innerHTML = `<div class="empty-state">جاري فحص الملف...</div>`;
+    const form = new FormData();
+    form.append("file", input.files[0]);
 
     try {
+        const response = await fetch("/api/students/import-preview", {
+            method: "POST",
+            body: form
+        });
+        const data = await response.json();
 
-        const response =
-            await fetch(
-                "/api/students/import-preview",
-                {
-                    method: "POST",
-                    body: form
-                }
-            );
-
-        const data =
-            await response.json();
-
-        if (
-            !response.ok ||
-            !data.success
-        ) {
-
-            preview.innerHTML = `
-                <div class="empty-state">
-                    ${escapeHtml(
-                        data.message ||
-                        "تعذر فحص الملف."
-                    )}
-                </div>
-            `;
-
+        if (!response.ok || !data.success) {
+            preview.innerHTML = `<div class="empty-state">${escapeHtml(data.message || "تعذر فحص الملف.")}</div>`;
             return;
         }
 
         let html = `
             <div class="management-result-item">
-
-                <div>
-                    <strong>
-                        إجمالي صالح
-                    </strong>
-                    <small>
-                        ${data.total_valid}
-                    </small>
-                </div>
-
-                <div>
-                    ➕ جديد:
-                    <strong>
-                        ${data.new_count}
-                    </strong>
-                </div>
-
-                <div>
-                    🔄 تحديث:
-                    <strong>
-                        ${data.update_count}
-                    </strong>
-                </div>
-
-                <div>
-                    ✅ بدون تغيير:
-                    <strong>
-                        ${data.unchanged_count}
-                    </strong>
-                </div>
-
-                <div>
-                    ⚠️ مراجعة:
-                    <strong>
-                        ${data.issue_count}
-                    </strong>
-                </div>
-
+                <div><strong>إجمالي صالح</strong><small>${data.total_valid}</small></div>
+                <div>➕ جديد: <strong>${data.new_count}</strong></div>
+                <div>🔄 تحديث: <strong>${data.update_count}</strong></div>
+                <div>✅ بدون تغيير: <strong>${data.unchanged_count}</strong></div>
+                <div>⚠️ مراجعة: <strong>${data.issue_count}</strong></div>
             </div>
         `;
 
         if (data.updates.length) {
-
-            html +=
-                "<h4>التغييرات المتوقعة</h4>" +
-
-                data.updates
-                    .slice(0, 30)
-                    .map(
-                        x => `
-                            <div class="management-result-item">
-
-                                <div>
-
-                                    <strong>
-                                        ${escapeHtml(x.student_name)}
-                                    </strong>
-
-                                    <small>
-                                        ${escapeHtml(x.old_class)}
-                                        ←
-                                        ${escapeHtml(x.new_class)}
-                                    </small>
-
-                                </div>
-
-                            </div>
-                        `
-                    )
-                    .join("");
-
+            html += "<h4>التغييرات المتوقعة</h4>" + data.updates.slice(0, 30).map(x => `
+                <div class="management-result-item"><div>
+                    <strong>${escapeHtml(x.student_name)}</strong>
+                    <small>${escapeHtml(x.old_class)} ← ${escapeHtml(x.new_class)}</small>
+                </div></div>
+            `).join("");
         }
 
         if (data.issues.length) {
-
-            html +=
-                "<h4>⚠️ تحتاج مراجعة</h4>" +
-
-                data.issues
-                    .slice(0, 30)
-                    .map(
-                        x => `
-                            <div class="management-result-item">
-
-                                <div>
-
-                                    <strong>
-                                        ${escapeHtml(x.student_name)}
-                                    </strong>
-
-                                    <small>
-                                        السطر ${escapeHtml(x.row)}
-                                        —
-                                        ${escapeHtml(x.reason)}
-                                    </small>
-
-                                </div>
-
-                            </div>
-                        `
-                    )
-                    .join("");
-
+            html += "<h4>⚠️ تحتاج مراجعة</h4>" + data.issues.slice(0, 100).map(x => `
+                <div class="management-result-item"><div>
+                    <strong>${escapeHtml(x.student_name)}</strong>
+                    <small>السطر ${escapeHtml(x.row)} — ${escapeHtml(x.reason)}</small>
+                </div></div>
+            `).join("");
         }
 
-        preview.innerHTML =
-            html;
-
-        if (
-            data.issue_count === 0
-        ) {
-
-            btn.classList.remove(
-                "hidden"
-            );
-
-        }
+        preview.innerHTML = html;
+        btn.dataset.issueCount = String(data.issue_count || 0);
+        btn.textContent = data.issue_count > 0
+            ? `✅ متابعة التحديث (${data.issue_count} حالة مراجعة)`
+            : "✅ تأكيد التحديث";
+        btn.classList.remove("hidden");
 
     } catch (error) {
-
-        preview.innerHTML = `
-            <div class="empty-state">
-                تعذر الاتصال بالنظام.
-            </div>
-        `;
-
+        preview.innerHTML = `<div class="empty-state">تعذر الاتصال بالنظام.</div>`;
     }
-
 }
 
-
 async function confirmStudentsExcelImport() {
+    const input = document.getElementById("studentsExcelFile");
+    const btn = document.getElementById("confirmExcelImportBtn");
 
-    const input =
-        document.getElementById(
-            "studentsExcelFile"
-        );
+    if (!input.files.length) return;
 
-    if (!input.files.length) {
-        return;
-    }
+    const issueCount = Number(btn.dataset.issueCount || 0);
+    const confirmText = issueCount > 0
+        ? `تم عرض ${issueCount} حالة تحتاج مراجعة. هل تسمحين بإضافتها الآن كما هي، على أن يتم تعديلها لاحقًا؟`
+        : "سيتم إضافة الجديد وتحديث الموجود مع الاحتفاظ بجميع سجلات الغياب السابقة. هل تريدين المتابعة؟";
 
-    if (
-        !confirm(
-            "سيتم إضافة الجديد وتحديث الموجود مع الاحتفاظ بجميع سجلات الغياب السابقة. هل تريدين المتابعة؟"
-        )
-    ) {
-        return;
-    }
+    if (!confirm(confirmText)) return;
 
-    const form =
-        new FormData();
-
-    form.append(
-        "file",
-        input.files[0]
-    );
+    const form = new FormData();
+    form.append("file", input.files[0]);
+    if (issueCount > 0) form.append("allow_issues", "1");
 
     try {
+        const response = await fetch("/api/students/import-confirm", {
+            method: "POST",
+            body: form
+        });
+        const data = await response.json();
 
-        const response =
-            await fetch(
-                "/api/students/import-confirm",
-                {
-                    method: "POST",
-                    body: form
-                }
-            );
-
-        const data =
-            await response.json();
-
-        if (
-            !response.ok ||
-            !data.success
-        ) {
-
-            showMessage(
-                data.message ||
-                "تعذر التحديث.",
-                "error"
-            );
-
+        if (!response.ok || !data.success) {
+            showMessage(data.message || "تعذر التحديث.", "error");
             return;
         }
 
-        showMessage(
-            data.message
-        );
-
-        document
-            .getElementById(
-                "confirmExcelImportBtn"
-            )
-            .classList
-            .add("hidden");
-
-        document.getElementById(
-            "excelImportPreview"
-        ).innerHTML = `
-            <div class="empty-state">
-                ✅ ${escapeHtml(data.message)}
-            </div>
+        showMessage(data.message);
+        btn.classList.add("hidden");
+        document.getElementById("excelImportPreview").innerHTML = `
+            <div class="empty-state">✅ ${escapeHtml(data.message)}</div>
         `;
-
         await refreshAll();
 
     } catch (error) {
-
-        showMessage(
-            "تعذر تنفيذ تحديث Excel.",
-            "error"
-        );
-
+        showMessage("تعذر تنفيذ تحديث Excel.", "error");
     }
-
 }
 
 

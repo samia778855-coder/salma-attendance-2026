@@ -1239,7 +1239,31 @@ def register_absence():
                 "اختاري طالبة غائبة واحدة على الأقل."
         }), 400
 
-    today = date.today().isoformat()
+    attendance_date = str(
+        data.get(
+            "attendance_date",
+            date.today().isoformat()
+        )
+    ).strip()
+
+    try:
+        selected_date = datetime.strptime(
+            attendance_date,
+            "%Y-%m-%d"
+        ).date()
+    except ValueError:
+        return jsonify({
+            "success": False,
+            "message": "تاريخ الغياب غير صحيح."
+        }), 400
+
+    if selected_date > date.today():
+        return jsonify({
+            "success": False,
+            "message": "لا يمكن تسجيل غياب بتاريخ مستقبلي."
+        }), 400
+
+    attendance_date = selected_date.isoformat()
     year = current_academic_year()
 
     conn = get_db()
@@ -1254,7 +1278,7 @@ def register_absence():
     """, (
         grade,
         section,
-        today,
+        attendance_date,
         year
     )).fetchone()
 
@@ -1289,7 +1313,7 @@ def register_absence():
                     VALUES (?, ?, ?, ?)
                 """, (
                     student_id,
-                    today,
+                    attendance_date,
                     teacher_name,
                     year
                 ))
@@ -1321,7 +1345,7 @@ def register_absence():
             """, (
                 grade,
                 section,
-                today,
+                attendance_date,
                 teacher_name,
                 year
             ))
