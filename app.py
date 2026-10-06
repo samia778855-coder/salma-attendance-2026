@@ -1175,6 +1175,74 @@ def students_import_confirm():
         return jsonify({"success":True,"message":f"تم التحديث بنجاح: إضافة {added}، تحديث {updated}، بدون تغيير {result['unchanged']}{review_note}."})
     except Exception as error: return jsonify({"success":False,"message":f"تعذر تنفيذ التحديث: {error}"}),400
 
+@app.route("/export-students-excel")
+def export_students_excel():
+    conn = get_db()
+
+    query = """
+        SELECT
+            student_name AS "اسم الطالبة",
+            grade AS "المرحلة",
+            section AS "الشعبة",
+            grade || '/' || section AS "الصف",
+            father_phone AS "رقم هاتف الأب",
+            mother_phone AS "رقم هاتف الأم",
+            father_phone_status AS "حالة رقم الأب",
+            mother_phone_status AS "حالة رقم الأم"
+        FROM students
+        WHERE active = 1
+        ORDER BY
+            CAST(grade AS INTEGER),
+            CAST(section AS INTEGER),
+            student_name
+    """
+
+    df = pd.read_sql_query(query, conn)
+    conn.close()
+
+    # إضافة ترقيم متسلسل في أول عمود.
+    df.insert(0, "م", range(1, len(df) + 1))
+
+    output = BytesIO()
+
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        df.to_excel(writer, index=False, sheet_name="الطالبات")
+
+        worksheet = writer.sheets["الطالبات"]
+        worksheet.sheet_view.rightToLeft = True
+        worksheet.freeze_panes = "A2"
+        worksheet.auto_filter.ref = worksheet.dimensions
+
+        # ضبط عرض الأعمدة لسهولة القراءة.
+        widths = {
+            "A": 8,
+            "B": 35,
+            "C": 12,
+            "D": 10,
+            "E": 12,
+            "F": 18,
+            "G": 18,
+            "H": 18,
+            "I": 18,
+        }
+        for column, width in widths.items():
+            worksheet.column_dimensions[column].width = width
+
+    output.seek(0)
+
+    filename = f"بيانات_الطالبات_{date.today().isoformat()}.xlsx"
+
+    return send_file(
+        output,
+        as_attachment=True,
+        download_name=filename,
+        mimetype=(
+            "application/vnd.openxmlformats-"
+            "officedocument.spreadsheetml.sheet"
+        )
+    )
+
+
 # =========================================================
 # ATTENDANCE
 # =========================================================
