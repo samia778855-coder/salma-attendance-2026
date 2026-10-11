@@ -1301,11 +1301,11 @@ function whatsappButton(
 
     }
 
+    // wa.me يتيح فتح تطبيق واتساب عند دعمه، مع بديل عبر المتصفح.
     const url =
-        "https://web.whatsapp.com/send" +
-        "?phone=" +
+        "https://wa.me/" +
         encodeURIComponent(normalized) +
-        "&text=" +
+        "?text=" +
         encodeURIComponent(message);
 
     return `
@@ -3207,58 +3207,23 @@ function normalizePhoneForWhatsApp(
 ========================================================= */
 
 function formatTime(value) {
+    if (!value) return "-";
 
-    if (!value) {
-        return "-";
-    }
+    // SQLite CURRENT_TIMESTAMP يسجل بالتوقيت العالمي UTC.
+    // نحدد UTC صراحة حتى لا يفسره المتصفح بتوقيت الجهاز.
+    const raw = String(value).trim();
+    const normalized = raw.replace(" ", "T");
+    const hasTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(normalized);
+    const iso = hasTimezone ? normalized : normalized + "Z";
+    const parsed = new Date(iso);
+    if (Number.isNaN(parsed.getTime())) return raw;
 
-    try {
-
-        const date =
-            new Date(value);
-
-        if (
-            Number.isNaN(
-                date.getTime()
-            )
-        ) {
-
-            const parts =
-                String(value)
-                    .split(" ");
-
-            if (
-                parts.length > 1
-            ) {
-
-                return parts[1]
-                    .slice(0, 5);
-
-            }
-
-            return value;
-        }
-
-        return date
-            .toLocaleTimeString(
-                "ar-OM",
-                {
-                    hour:
-                        "2-digit",
-
-                    minute:
-                        "2-digit"
-                }
-            );
-
-    } catch (error) {
-
-        return value;
-
-    }
-
+    return new Intl.DateTimeFormat("ar-OM", {
+        timeZone: "Asia/Muscat",
+        hour: "2-digit",
+        minute: "2-digit"
+    }).format(parsed);
 }
-
 
 /* =========================================================
    ESCAPE HELPERS

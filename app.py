@@ -2,12 +2,18 @@ from flask import Flask, render_template, request, jsonify, send_file
 import sqlite3
 from pathlib import Path
 from datetime import date, datetime
+from zoneinfo import ZoneInfo
 from io import BytesIO
 import shutil
 import pandas as pd
 
 
 app = Flask(__name__)
+
+OMAN_TZ = ZoneInfo("Asia/Muscat")
+
+def oman_today():
+    return datetime.now(OMAN_TZ).date()
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -351,7 +357,7 @@ def get_actual_classes():
 
 
 def get_unregistered_classes():
-    today = date.today().isoformat()
+    today = oman_today().isoformat()
     academic_year = current_academic_year()
 
     actual_classes = get_actual_classes()
@@ -396,7 +402,7 @@ def get_unregistered_classes():
 
 
 def calculate_dashboard():
-    today = date.today().isoformat()
+    today = oman_today().isoformat()
     academic_year = current_academic_year()
 
     conn = get_db()
@@ -534,7 +540,7 @@ def audit(action, description, teacher_name=""):
 def home():
     return render_template(
         "index.html",
-        today=date.today().isoformat(),
+        today=oman_today().isoformat(),
         school_name=get_setting(
             "school_name",
             "مدرسة سلمى بنت قيس للتعليم الأساسي (5–12)"
@@ -564,7 +570,7 @@ def dashboard_api():
 
 @app.route("/api/class-status")
 def class_status():
-    today = date.today().isoformat()
+    today = oman_today().isoformat()
     year = current_academic_year()
 
     actual_classes = get_actual_classes()
@@ -1230,7 +1236,7 @@ def export_students_excel():
 
     output.seek(0)
 
-    filename = f"بيانات_الطالبات_{date.today().isoformat()}.xlsx"
+    filename = f"بيانات_الطالبات_{oman_today().isoformat()}.xlsx"
 
     return send_file(
         output,
@@ -1310,7 +1316,7 @@ def register_absence():
     attendance_date = str(
         data.get(
             "attendance_date",
-            date.today().isoformat()
+            oman_today().isoformat()
         )
     ).strip()
 
@@ -1325,7 +1331,7 @@ def register_absence():
             "message": "تاريخ الغياب غير صحيح."
         }), 400
 
-    if selected_date > date.today():
+    if selected_date > oman_today():
         return jsonify({
             "success": False,
             "message": "لا يمكن تسجيل غياب بتاريخ مستقبلي."
@@ -1498,7 +1504,7 @@ def no_absence():
                 "يرجى كتابة اسم المعلمة."
         }), 400
 
-    today = date.today().isoformat()
+    today = oman_today().isoformat()
     year = current_academic_year()
 
     conn = get_db()
@@ -1569,7 +1575,7 @@ def no_absence():
     "/api/today-absences"
 )
 def today_absences():
-    today = date.today().isoformat()
+    today = oman_today().isoformat()
     year = current_academic_year()
 
     conn = get_db()
@@ -1825,7 +1831,7 @@ def log_notification():
             "phone_number",
             ""
         ),
-        date.today().isoformat(),
+        oman_today().isoformat(),
         "تم فتح واتساب من النظام"
     ))
 
@@ -1852,12 +1858,12 @@ def reports():
 
     report_date = request.args.get(
         "date",
-        date.today().isoformat()
+        oman_today().isoformat()
     )
 
     month = request.args.get(
         "month",
-        date.today().strftime(
+        oman_today().strftime(
             "%Y-%m"
         )
     )
@@ -2129,12 +2135,12 @@ def export_excel():
 
     report_date = request.args.get(
         "date",
-        date.today().isoformat()
+        oman_today().isoformat()
     )
 
     month = request.args.get(
         "month",
-        date.today().strftime(
+        oman_today().strftime(
             "%Y-%m"
         )
     )
@@ -2347,7 +2353,7 @@ def backup_database():
         exist_ok=True
     )
 
-    timestamp = datetime.now().strftime(
+    timestamp = datetime.now(OMAN_TZ).strftime(
         "%Y%m%d_%H%M%S"
     )
 
